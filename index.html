@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Home</title>
+
+  <link rel="stylesheet" type="text/css" href="clean_style.css" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace.js"></script>
+
+  <meta property="og:url" content="https://url/" />
+  <meta property="og:title" content="Home" />
+  <meta property="og:type" content="website" />
+</head>
+
+<body>
+  <div class="main-container">
+    <div class="sidebar"></div>
+
+    <div class="content-area">
+      <div class="header"></div>
+
+      <div class="inner-block">
+        <div class="question-box">
+          <p class="question-text">
+            I have an html box. what is the minimal css to make it resizible by
+            dragging?
+          </p>
+        </div>
+
+        <div class="answer-container" style="width: stretch;" st>
+          <div>
+            <div class="details-group">
+              <sl-details>
+                <div slot="summary">
+                  Gemini <sl-icon name="google"></sl-icon>
+                </div>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+                dolore magna
+                aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco labor is nisi ut aliquip ex ea
+                commodo consequat.
+              </sl-details>
+
+              <sl-details summary="Second">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+                dolore magna
+                aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                consequat.
+              </sl-details>
+
+              <sl-details summary="Third">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+                dolore magna
+                aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                consequat.
+              </sl-details>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-footer">
+        <textarea class="auto-grow-textarea"></textarea> </textarea>
+        <sl-button variant="primary">
+          <sl-icon name="arrow-return-left" label="Send">
+          </sl-icon>
+        </sl-button>
+      </div>
+    </div>
+  </div>
+
+  <script src="jscode/chat.js"></script>
+  <script src="jscode/misc.js"></script>
+</body>
+
+</html>

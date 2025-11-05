@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shoelace Toast</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/themes/light.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/shoelace-autoloader.js"></script>
+</head>
+<body>
+    <sl-button onclick="showToast()">Click me</sl-button>
+    
+    <sl-alert id="toast" variant="primary" duration="3000" closable>
+        <sl-icon slot="icon" name="info-circle"></sl-icon>
+        Toast message!
+    </sl-alert>
+    
+    <script type="module">
+        import { setBasePath } from 'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/utilities/base-path.js';
+        setBasePath('https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/');
+        
+        window.showToast = () => {
+            document.getElementById('toast').toast();
+        };
+    </script>
+</body>
+</html>

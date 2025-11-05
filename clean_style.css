@@ -1,0 +1,135 @@
+:root {
+    font-family: Arial, Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.2;
+    min-height: 100%;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    height: 100%;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+
+.main-container {
+    display: flex;
+    width: 100%;
+
+}
+
+.sidebar {
+    width: 20%;
+    background-color: #ff000030;
+}
+
+.content-area {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+
+    width: stretch;
+    background-color: #0018ed3d;
+    scrollbar-width: none;
+
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+
+.header{
+    min-height: 4rem;
+    background-color: #25ff0430;
+}
+
+.inner-block {
+    display: flex;
+    flex-direction: column;
+    height: stretch;
+    background-color: #a6a6a6;
+    scrollbar-width: none;
+    align-items: end;
+
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.question-box {
+    display: block;
+    width: fit-content; /* Shrinks width to fit content */
+    background-color: #43944b59;
+    margin: 1em 4% 1em 12%;
+    padding: 1% 1% 1% 2%;
+    min-height: 3rem;
+}
+
+.question-text {
+    margin: 0;
+    text-align: right;
+}
+
+.answer-container {
+    margin: 1em 4% 1em 4%;
+    min-width: auto;
+    min-height: fit-content;
+    border: 1px solid black;
+}
+
+
+.input-footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+
+
+
+    margin: 2% 8% 4% 8%;
+}
+
+.code-input {
+    display: block;
+    height: stretch;
+    min-height: 2%;
+
+    resize: none;
+    scrollbar-width: none;
+
+    flex-grow: 1;
+    margin: 0;
+}
+
+.aianswer {
+    background-color: aquamarine;
+}
+
+.auto-grow-textarea {
+    width:100%;
+    min-height: 2.5rem;
+    max-height: 33vh;
+    overflow-y: auto;
+    resize: none;
+    box-sizing: border-box;
+    /* Include padding in height */
+}
+
+
+  sl-details::part(header) {
+  padding: 0.25rem 0.5rem; /* Reduce padding to make it shorter */
+  min-height: 1.5rem;       /* Default is ~2rem; reduce this */
+  height: auto;             /* Allow shrinking */
+}
+
+sl-details::part(summary) {
+  padding: 0.25rem 0.5rem;  /* Optional: adjust summary padding too */
+}
