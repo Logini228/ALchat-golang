@@ -127,9 +127,64 @@ body {
   sl-details::part(header) {
   padding: 0.25rem 0.5rem; /* Reduce padding to make it shorter */
   min-height: 1.5rem;       /* Default is ~2rem; reduce this */
-  height: auto;             /* Allow shrinking */
+  height: auto;          /* Allow shrinking */
 }
 
 sl-details::part(summary) {
   padding: 0.25rem 0.5rem;  /* Optional: adjust summary padding too */
+
 }
+
+    .sidebar {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border: 2px solid #ccc;
+      box-sizing: border-box;
+      padding: 10px;
+    }
+
+    .panel-container {
+      display: flex;
+      flex-direction: column-reverse;
+      flex: 1;
+      gap: 5px;
+    }
+
+    .panel {
+      flex: 0 0 auto;
+      margin: 0;
+      
+    }
+
+    .panel[open] {
+      flex: 1;
+    }
+
+    .panel[open]::part(base) {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .panel[open]::part(header) {
+      flex: 0 0 auto;
+    }
+
+    .panel[open]::part(content) {
+      flex: 1;
+      max-height: none !important;
+      overflow: hidden; /* Prevent scrollbars inside resize area */
+      
+    }
+
+    .panel-content {
+      height: 100%;
+      overflow: auto;
+      box-sizing: border-box;
+      padding: 10px;
+      background: #f8f9fa;
+      border: 1px solid #eee;
+      min-height: 50px; /* Prevent collapse */
+      max-height: 100%; /* Optional: cap at container height */
+    }
