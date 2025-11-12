@@ -1,190 +1,187 @@
 :root {
-    font-family: Arial, Roboto, sans-serif;
-    font-size: 16px;
-    line-height: 1.2;
-    min-height: 100%;
+  font-family: Arial, Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.2;
+  min-height: 100%;
 }
 
 html,
 body {
-    height: 100%;
+  height: 100%;
 }
 
 body {
-    margin: 0;
-    display: flex;
-    height: 100%;
+  margin: 0;
+  display: flex;
+  height: 100%;
 }
 
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 
 .main-container {
-    display: flex;
-    width: 100%;
+  display: flex;
+  width: 100%;
 
 }
 
 .sidebar {
-    width: 20%;
-    background-color: #ff000030;
+  width: 20%;
+  background-color: #ff000030;
 }
 
 .content-area {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: space-between;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
 
-    width: stretch;
-    background-color: #0018ed3d;
-    scrollbar-width: none;
+  width: stretch;
+  background-color: #0018ed3d;
+  scrollbar-width: none;
 
-    flex-grow: 1;
-    flex-shrink: 1;
+  flex-grow: 1;
+  flex-shrink: 1;
 }
 
 
-.header{
-    min-height: 4rem;
-    background-color: #25ff0430;
+.header {
+  min-height: 4rem;
+  background-color: #25ff0430;
 }
 
 .inner-block {
-    display: flex;
-    flex-direction: column;
-    height: stretch;
-    background-color: #a6a6a6;
-    scrollbar-width: none;
-    align-items: end;
+  display: flex;
+  flex-direction: column;
+  height: stretch;
+  background-color: #a6a6a6;
+  scrollbar-width: none;
+  align-items: end;
 
-    overflow-x: auto;
-    overflow-y: auto;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 .question-box {
-    display: block;
-    width: fit-content; /* Shrinks width to fit content */
-    background-color: #43944b59;
-    margin: 1em 4% 1em 12%;
-    padding: 1% 1% 1% 2%;
-    min-height: 3rem;
+  display: block;
+  width: fit-content;
+  /* Shrinks width to fit content */
+  background-color: #43944b59;
+  margin: 1em 4% 1em 12%;
+  padding: 1% 1% 1% 2%;
+  min-height: 3rem;
 }
 
 .question-text {
-    margin: 0;
-    text-align: right;
+  margin: 0;
+  text-align: right;
 }
 
 .answer-container {
-    margin: 1em 4% 1em 4%;
-    min-width: auto;
-    min-height: fit-content;
-    border: 1px solid black;
+  margin: 1em 4% 1em 4%;
+  min-width: auto;
+  min-height: fit-content;
+  border: 1px solid black;
 }
 
 
 .input-footer {
-    display: flex;
-    flex-direction: row;
-    justify-content: start;
-    align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
 
 
 
-    margin: 2% 8% 4% 8%;
+  margin: 2% 8% 4% 8%;
 }
 
 .code-input {
-    display: block;
-    height: stretch;
-    min-height: 2%;
+  display: block;
+  height: stretch;
+  min-height: 2%;
 
-    resize: none;
-    scrollbar-width: none;
+  resize: none;
+  scrollbar-width: none;
 
-    flex-grow: 1;
-    margin: 0;
+  flex-grow: 1;
+  margin: 0;
 }
 
 .aianswer {
-    background-color: aquamarine;
+  background-color: aquamarine;
 }
 
 .auto-grow-textarea {
-    width:100%;
-    min-height: 2.5rem;
-    max-height: 33vh;
-    overflow-y: auto;
-    resize: none;
-    box-sizing: border-box;
-    /* Include padding in height */
+  width: 100%;
+  min-height: 2.5rem;
+  max-height: 33vh;
+  overflow-y: auto;
+  resize: none;
+  box-sizing: border-box;
+  /* Include padding in height */
 }
 
 
-  sl-details::part(header) {
-  padding: 0.25rem 0.5rem; /* Reduce padding to make it shorter */
-  min-height: 1.5rem;       /* Default is ~2rem; reduce this */
-  height: auto;          /* Allow shrinking */
+sl-details::part(header) {
+  padding: 0.25rem 0.5rem;
+  /* Reduce padding to make it shorter */
+  min-height: 1.5rem;
+  /* Default is ~2rem; reduce this */
+  height: auto;
+  /* Allow shrinking */
 }
 
 sl-details::part(summary) {
-  padding: 0.25rem 0.5rem;  /* Optional: adjust summary padding too */
+  padding: 0.25rem 0.5rem;
+  /* Optional: adjust summary padding too */
 
 }
 
-    .sidebar {
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      border: 2px solid #ccc;
-      box-sizing: border-box;
-      padding: 10px;
-    }
+.sidebar {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid #ccc;
+  padding: 10px;
+  box-sizing: border-box;
+}
 
-    .panel-container {
-      display: flex;
-      flex-direction: column-reverse;
-      flex: 1;
-      gap: 5px;
-    }
+/* 1. Force flex items to calculate from zero */
+.panel-container {
+  display: flex;
+  flex-direction: column-reverse;
+  flex: 1;
+  gap: 5px;
+  min-height: 0;
+}
 
-    .panel {
-      flex: 0 0 auto;
-      margin: 0;
-      
-    }
+.panel[open] {
+  flex: 1 1 0%; /* ✅ 0% forces height calculation from parent */
+  min-height: 0;
+}
 
-    .panel[open] {
-      flex: 1;
-    }
+/* 2. Make the shadow content part a flex container */
+.panel[open]::part(base) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
 
-    .panel[open]::part(base) {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
+.panel[open]::part(content) {
+  flex: 1 1 0%; /* ✅ Fill available space */
+  min-height: 0;
+  padding: 0 !important; /* Remove Shoelace padding */
+}
 
-    .panel[open]::part(header) {
-      flex: 0 0 auto;
-    }
-
-    .panel[open]::part(content) {
-      flex: 1;
-      max-height: none !important;
-      overflow: hidden; /* Prevent scrollbars inside resize area */
-      
-    }
-
-    .panel-content {
-      height: 100%;
-      overflow: auto;
-      box-sizing: border-box;
-      padding: 10px;
-      background: #f8f9fa;
-      border: 1px solid #eee;
-      min-height: 50px; /* Prevent collapse */
-      max-height: 100%; /* Optional: cap at container height */
-    }
+/* 3. THIS is your scroll container */
+.panel-content {
+  padding: 10px;
+  min-height: 50px;
+  height: 100%; /* Fill the content part */
+  overflow: auto; /* ✅ Scrollbar appears here */
+  box-sizing: border-box;
+}
