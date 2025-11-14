@@ -1,25 +1,197 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Shoelace Toast</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/themes/light.css" />
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/shoelace-autoloader.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Searchable Checkbox List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        #searchInput {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        
+        #searchInput:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .checkbox-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .checkbox-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        
+        .checkbox-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .checkbox-item:last-child {
+            border-bottom: none;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .checkbox-item label {
+            cursor: pointer;
+            flex: 1;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .no-results {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <sl-button onclick="showToast()">Click me</sl-button>
-    
-    <sl-alert id="toast" variant="primary" duration="3000" closable>
-        <sl-icon slot="icon" name="info-circle"></sl-icon>
-        Toast message!
-    </sl-alert>
-    
-    <script type="module">
-        import { setBasePath } from 'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/utilities/base-path.js';
-        setBasePath('https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/');
+    <div class="container">
+        <h1>Searchable Checkbox List</h1>
         
-        window.showToast = () => {
-            document.getElementById('toast').toast();
-        };
+        <input type="text" id="searchInput" placeholder="Search for items..." onkeyup="filterCheckboxes()">
+        
+        <div class="checkbox-list" id="checkboxList">
+            <div class="checkbox-item">
+                <input type="checkbox" id="item1" value="Apple">
+                <label for="item1">Apple</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item2" value="Banana">
+                <label for="item2">Banana</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item3" value="Orange">
+                <label for="item3">Orange</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item4" value="Strawberry">
+                <label for="item4">Strawberry</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item5" value="Grapes">
+                <label for="item5">Grapes</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item6" value="Watermelon">
+                <label for="item6">Watermelon</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item7" value="Pineapple">
+                <label for="item7">Pineapple</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item8" value="Mango">
+                <label for="item8">Mango</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item9" value="Kiwi">
+                <label for="item9">Kiwi</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item10" value="Peach">
+                <label for="item10">Peach</label>
+            </div>
+        </div>
+        
+        <div class="no-results" id="noResults">No items found</div>
+    </div>
+
+    <script>
+        function filterCheckboxes() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toUpperCase();
+            const checkboxList = document.getElementById('checkboxList');
+            const items = checkboxList.getElementsByClassName('checkbox-item');
+            const noResults = document.getElementById('noResults');
+            
+            let visibleCount = 0;
+            
+            for (let i = 0; i < items.length; i++) {
+                const label = items[i].getElementsByTagName('label')[0];
+                const txtValue = label.textContent || label.innerText;
+                
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    items[i].style.display = '';
+                    visibleCount++;
+                } else {
+                    items[i].style.display = 'none';
+                }
+            }
+            
+            // Show/hide no results message
+            if (visibleCount === 0) {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
+        }
+        
+        // Optional: Add select all functionality
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        }
+        
+        // Optional: Add clear selection functionality
+        function clearSelection() {
+            const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+        
+        // Optional: Get selected items
+        function getSelectedItems() {
+            const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]:checked');
+            const selected = [];
+            checkboxes.forEach(checkbox => {
+                selected.push(checkbox.value);
+            });
+            return selected;
+        }
     </script>
 </body>
 </html>
