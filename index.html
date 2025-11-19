@@ -20,13 +20,59 @@
   <div class="main-container">
   <div class="sidebar">
     <div class="panel-container">
-      <sl-details class="panel" data-panel-id="1" summary="Panel 1">
-        <div class="panel-content">C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br>C<br></div>
+      <sl-details class="panel" data-panel-id="1" summary="Tools">
+        <div class="panel-content"></div>
       </sl-details>
-      <sl-details class="panel" data-panel-id="2" summary="Panel 2">
-        <div class="panel-content">C</div>
+      <sl-details class="panel" data-panel-id="2" summary="Models">
+        <div class="panel-content">        <input type="text" id="searchInput" placeholder="Search for items..." onkeyup="filterCheckboxes()">
+        
+        <div class="checkbox-list" id="checkboxList">
+            <div class="checkbox-item">
+                <input type="checkbox" id="item1" value="Apple">
+                <label for="item1">Apple</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item2" value="Banana">
+                <label for="item2">Banana</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item3" value="Orange">
+                <label for="item3">Orange</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item4" value="Strawberry">
+                <label for="item4">Strawberry</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item5" value="Grapes">
+                <label for="item5">Grapes</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item6" value="Watermelon">
+                <label for="item6">Watermelon</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item7" value="Pineapple">
+                <label for="item7">Pineapple</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item8" value="Mango">
+                <label for="item8">Mango</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item9" value="Kiwi">
+                <label for="item9">Kiwi</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="item10" value="Peach">
+                <label for="item10">Peach</label>
+            </div>
+        </div></div>
       </sl-details>
-      <sl-details class="panel" data-panel-id="3" summary="Panel 3">
+      <sl-details class="panel" data-panel-id="3" summary="Chats">
+        <div class="panel-content">Co</div>
+      </sl-details>
+      <sl-details class="panel" data-panel-id="3" summary="Spaces">
         <div class="panel-content">Co</div>
       </sl-details>
     </div>
@@ -39,38 +85,22 @@
         <div class="question-box">
           <p class="question-text">
             I have an html box. what is the minimal css to make it resizible by
-            dragging?
+            dragging? aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
           </p>
         </div>
 
         <div class="answer-container" style="width: stretch;" st>
-          <div>
             <div class="details-group">
               <sl-details>
                 <div slot="summary">
-                  Gemini <sl-icon name="google"></sl-icon>
+                  Gemini 
                 </div>
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
                 dolore magna
                 aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco labor is nisi ut aliquip ex ea
                 commodo consequat.
               </sl-details>
-
-              <sl-details summary="Second">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-                dolore magna
-                aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-                consequat.
-              </sl-details>
-
-              <sl-details summary="Third">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-                dolore magna
-                aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-                consequat.
-              </sl-details>
             </div>
-          </div>
         </div>
       </div>
 

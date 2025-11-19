@@ -39,24 +39,30 @@ body {
   justify-content: space-between;
 
   width: stretch;
-  background-color: #0018ed3d;
   scrollbar-width: none;
 
   flex-grow: 1;
   flex-shrink: 1;
+
+  background-color: #a6a6a6;
 }
 
 
 .header {
   min-height: 4rem;
-  background-color: #25ff0430;
+  background: linear-gradient(to bottom, 
+      #0868ce, 
+      transparent
+    );
+
 }
+
 
 .inner-block {
   display: flex;
   flex-direction: column;
   height: stretch;
-  background-color: #a6a6a6;
+  background-color: #d1f0d4fa;
   scrollbar-width: none;
   align-items: end;
 
@@ -66,12 +72,23 @@ body {
 
 .question-box {
   display: block;
-  width: fit-content;
-  /* Shrinks width to fit content */
+  height: fit-content;
   background-color: #43944b59;
-  margin: 1em 4% 1em 12%;
+  
+  margin: 1em 4% 1em 12%; 
   padding: 1% 1% 1% 2%;
   min-height: 3rem;
+
+  max-width: 84%;
+}
+
+.question-box p {
+    margin: 0;
+    padding: 0; 
+
+    width: 100%;
+    overflow-wrap: break-word;
+    word-break: break-word; 
 }
 
 .question-text {
@@ -92,9 +109,6 @@ body {
   flex-direction: row;
   justify-content: start;
   align-items: center;
-
-
-
   margin: 2% 8% 4% 8%;
 }
 
