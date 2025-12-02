@@ -10,22 +10,18 @@ import (
 
 var db *sql.DB
 
-func DBconnect() {
-	// Connection string
-	connStr := "user=postgres dbname=postgres sslmode=disable password=admin1"
+func DBconnect(user, password, dbname, host, port string) {
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
+		user, password, dbname, host, port)
 
-	// Open a database connection
 	var err error
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to open database:", err)
 	}
-	// Remove defer db.Close() - keep connection open for global use
 
-	// Verify the connection
-	err = db.Ping()
-	if err != nil {
-		log.Fatal(err)
+	if err = db.Ping(); err != nil {
+		log.Fatal("Failed to connect to database:", err)
 	}
 
 	fmt.Println("Successfully connected to the database!")

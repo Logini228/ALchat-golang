@@ -1,0 +1,8 @@
+docker run -d \
+  --name postgredb \
+  --env-file .env \
+  -p 5432:5432 \
+  -v pgdata:/var/lib/postgresql/data \
+  postgres:16
+
+  psql -h 127.0.0.1 -U postgresdb -d postgresdb -f schema.sql
