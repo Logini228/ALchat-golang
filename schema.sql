@@ -1,5 +1,5 @@
 -- schema.sql
--- psql -U postgres -d postgres -f schema.sql
+-- psql -h 127.0.0.1 -U postgres -d postgres -f schema.sql
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 

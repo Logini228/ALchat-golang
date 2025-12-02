@@ -20,4 +20,6 @@ func main() {
 	router.POST("/auth", gocode.Auth)
 
 	startServer(router)
+	
+	defer gocode.CloseDB()
 }

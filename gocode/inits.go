@@ -13,7 +13,7 @@ func Init() {
 	logger.Info.Println("gocode library loaded")
 
 	LoadEnv()
-	DBconnect(user, password, dbname, host, port)
+	DBconnect()
 	defer CloseDB()
 }
 
@@ -27,9 +27,9 @@ func LoadEnv() {
 	google_recaptcha_site = os.Getenv("GOOGLE_RECAPTCHA_SITE")
 	openrouter_api_key = os.Getenv("OPENROUTER_API_KEY")
 
-	user := os.Getenv("POSTGRES_USER")
-	password := os.Getenv("POSTGRES_PASSWORD")
-	db := os.Getenv("POSTGRES_DB")
-	host := os.Getenv("POSTGRES_HOST")
-	port := os.Getenv("POSTGRES_PORT")
+	user = os.Getenv("POSTGRES_USER")
+	password = os.Getenv("POSTGRES_PASSWORD")
+	dbname = os.Getenv("POSTGRES_DB")
+	host = os.Getenv("POSTGRES_HOST")
+	port = os.Getenv("POSTGRES_PORT")
 }

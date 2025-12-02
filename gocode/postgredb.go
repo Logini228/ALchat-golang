@@ -9,8 +9,9 @@ import (
 )
 
 var db *sql.DB
+var user, password, dbname, host, port string
 
-func DBconnect(user, password, dbname, host, port string) {
+func DBconnect() {
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
 		user, password, dbname, host, port)
 
