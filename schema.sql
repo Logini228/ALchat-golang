@@ -20,6 +20,7 @@ CREATE TABLE chat (
 
 -- Models table (your new table)
 CREATE TABLE models (
+    aggregator TEXT NOT NULL,
     provider TEXT NOT NULL,
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -27,5 +28,5 @@ CREATE TABLE models (
     context INTEGER,
     inputs TEXT[] NOT NULL,
     outputs TEXT[] NOT NULL,
-    misc JSONB NOT NULL DEFAULT '{}'
+    original JSONB NOT NULL DEFAULT '{}'
 );
