@@ -1,7 +1,7 @@
 package gocode
 
 import (
-	logger "aichat/logs"
+	"aichat/gologs"
 	"log"
 	"os"
 
@@ -9,12 +9,12 @@ import (
 )
 
 func Init() {
-	logger.Init()
-	logger.Info.Println("gocode library loaded")
+	gologs.Init()
+	gologs.Info.Println("gocode library loaded")
 
 	LoadEnv()
 	DBconnect()
-	defer CloseDB()
+	Request()
 }
 
 func LoadEnv() {

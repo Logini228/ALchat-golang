@@ -4,11 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"aichat/gocode"
-	logger "aichat/logs"
+	"aichat/gologs"
 )
 
 func main() {
-	logger.Init()
+	gologs.Init()
 	gocode.Init()
 
 	router := gin.Default()
@@ -20,6 +20,6 @@ func main() {
 	router.POST("/auth", gocode.Auth)
 
 	startServer(router)
-	
+
 	defer gocode.CloseDB()
 }

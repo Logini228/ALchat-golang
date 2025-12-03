@@ -1,0 +1,18 @@
+package gocode
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+)
+
+func Request() {
+	url := "https://openrouter.ai/api/v1/models"
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", "Bearer "+openrouter_api_key)
+	res, _ := http.DefaultClient.Do(req)
+	defer res.Body.Close()
+	body, _ := io.ReadAll(res.Body)
+	fmt.Println(res)
+	fmt.Println(string(body))
+}

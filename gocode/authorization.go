@@ -1,7 +1,7 @@
 package gocode
 
 import (
-	logger "aichat/logs"
+	"aichat/gologs"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -98,7 +98,7 @@ func VerifyLoginGoogle(code string) bool {
 
 	resp, err := http.PostForm("https://oauth2.googleapis.com/token", form)
 	if err != nil || resp.StatusCode != 200 {
-		logger.Error.Println("Something wrong with user's google code")
+		gologs.Error.Println("Something wrong with user's google code")
 		return false
 	}
 	var tok struct {
@@ -112,7 +112,7 @@ func VerifyLoginGoogle(code string) bool {
 	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil || resp.StatusCode != 200 {
-		logger.Error.Println("Something wrong with user info")
+		gologs.Error.Println("Something wrong with user info")
 		return false
 	}
 	defer resp.Body.Close()
@@ -129,7 +129,7 @@ func VerifyRecaptcha(token string) bool {
 	// Create client
 	client, err := recaptcha.NewClient(ctx, option.WithCredentialsFile("./aichat-golang-google.json"))
 	if err != nil {
-		logger.Error.Println("failed to create client: %w", err)
+		gologs.Error.Println("failed to create client: %w", err)
 		return false
 	}
 	defer client.Close()
@@ -148,13 +148,13 @@ func VerifyRecaptcha(token string) bool {
 	// Call the API
 	response, err := client.CreateAssessment(ctx, request)
 	if err != nil {
-		logger.Error.Println("assessment failed: %w", err)
+		gologs.Error.Println("assessment failed: %w", err)
 		return false
 	}
 
 	// Check if token is valid
 	if !response.TokenProperties.Valid {
-		logger.Error.Println("invalid token: ", response.TokenProperties.InvalidReason)
+		gologs.Error.Println("invalid token: ", response.TokenProperties.InvalidReason)
 		return false
 	}
 

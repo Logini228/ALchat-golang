@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"aichat/gocode"
-	logger "aichat/logs"
+	"aichat/gologs"
 )
 
 func startServer(router *gin.Engine) {
@@ -33,13 +33,13 @@ func startServer(router *gin.Engine) {
 
 	preShutdown()
 
-	logger.Info.Println("shutting down...")
+	gologs.Info.Println("shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		logger.Error.Println("forced shutdown:", err)
+		gologs.Error.Println("forced shutdown:", err)
 	} else {
-		logger.Info.Println("server stopped")
+		gologs.Info.Println("server stopped")
 	}
 }
 

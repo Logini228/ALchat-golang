@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	logger "aichat/logs"
+	"aichat/gologs"
 )
 
 var openrouter_api_key string
@@ -145,7 +145,7 @@ func Auth(c *gin.Context) {
 	case "loginJWT":
 
 	default:
-		logger.Error.Println("Unexpected authtype: " + authtype)
+		gologs.Error.Println("Unexpected authtype: " + authtype)
 	}
 
 	fmt.Println("auth triggered with authtype: " + authtype)
