@@ -120,7 +120,7 @@ func RegisterWithDB(email string, password string) bool {
 	return true
 }
 
-func InsertModelEntry(entry ModelEntry) error {
+func InsertModelEntry(entry ModelEntry) {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
 	}
@@ -144,5 +144,8 @@ func InsertModelEntry(entry ModelEntry) error {
 		pq.Array(entry.Outputs),
 		entry.Original,
 	)
-	return err
+
+	if err != nil {
+		gologs.Error.Printf("couldn't insert model entry, %v", err)
+	}
 }

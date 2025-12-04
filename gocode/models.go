@@ -23,7 +23,7 @@ type ModelEntry struct {
 	Original   string
 }
 
-func ModelsOpenRouter() []ModelEntry {
+func ModelsOpenRouter() {
 	url := "https://openrouter.ai/api/v1/models"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -46,7 +46,6 @@ func ModelsOpenRouter() []ModelEntry {
 		gologs.Error.Printf("failed to read response body: %v", err)
 	}
 
-	var entries []ModelEntry
 	gjson.GetBytes(body, "data").ForEach(func(_, model gjson.Result) bool {
 		// Helper to safely get float64 from string or number
 
@@ -62,11 +61,9 @@ func ModelsOpenRouter() []ModelEntry {
 			Outputs:    toStringSlice(model.Get("architecture.output_modalities").Array()),
 			Original:   model.Raw,
 		}
-		entries = append(entries, entry)
+		InsertModelEntry(entry)
 		return true
 	})
-
-	return entries
 }
 
 // Helper function
