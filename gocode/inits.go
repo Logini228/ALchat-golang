@@ -2,7 +2,6 @@ package gocode
 
 import (
 	"aichat/gologs"
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -20,7 +19,7 @@ func Init() {
 func LoadEnv() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		gologs.Error.Println("Error loading .env file")
 	}
 
 	jwt_secret_key = os.Getenv("JWT_SECRET_KEY")

@@ -1,11 +1,11 @@
 package gocode
 
 import (
+	"aichat/gologs"
 	"database/sql"
 	"fmt"
-	"log"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 var db *sql.DB
@@ -18,14 +18,14 @@ func DBconnect() {
 	var err error
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal("Failed to open database:", err)
+		gologs.Error.Println("Failed to open database:", err)
 	}
 
 	if err = db.Ping(); err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		gologs.Error.Println("Failed to connect to database:", err)
 	}
 
-	fmt.Println("Successfully connected to the database!")
+	gologs.Info.Println("Successfully connected to the database!")
 }
 
 func CloseDB() {
@@ -47,10 +47,10 @@ func InsertChatData(chatid string, sender string, message []byte) {
 	var id int
 	err := db.QueryRow(sqlStatement, chatid, sender, message).Scan(&id)
 	if err != nil {
-		log.Fatal(err)
+		gologs.Error.Println(err)
 	}
 
-	fmt.Println("New record ID:", id)
+	gologs.Info.Println("New record ID:", id)
 }
 
 func QueryChatData(chatid string) ([]string, error) {
@@ -75,7 +75,7 @@ func QueryChatData(chatid string) ([]string, error) {
 
 func LoginWithDB(email string, password string) string {
 	if db == nil {
-		log.Fatal("database connection is nil")
+		gologs.Error.Println("database connection is nil")
 	}
 
 	sqlStatement := `
@@ -85,7 +85,7 @@ func LoginWithDB(email string, password string) string {
 	var uuid string
 	err := db.QueryRow(sqlStatement, email, password).Scan(&uuid)
 	if err != nil {
-		fmt.Println("wrong email or password")
+		gologs.Error.Println("wrong email or password")
 	}
 
 	return uuid
@@ -100,7 +100,7 @@ func RegisterWithDB(email string, password string) bool {
 	var uuid string
 	err := db.QueryRow(sqlStatementCheck, email).Scan(&uuid)
 	if err == nil {
-		fmt.Println("email occupied")
+		gologs.Error.Println("email occupied")
 	}
 
 	if uuid != "" {
@@ -114,8 +114,35 @@ func RegisterWithDB(email string, password string) bool {
 
 	err2 := db.QueryRow(sqlStatement, email, password).Scan(&uuid)
 	if err2 != nil {
-		fmt.Println("couldnt register")
+		gologs.Error.Println("couldnt register")
 	}
 
 	return true
+}
+
+func InsertModelEntry(entry ModelEntry) error {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+	}
+
+	_, err := db.Exec(`
+        INSERT INTO models (
+            aggregator, provider, id, name, price, created, context, inputs, outputs, original
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+        )
+        ON CONFLICT (id) DO NOTHING;
+    `,
+		entry.Aggregator,
+		entry.Provider,
+		entry.ID,
+		entry.Name,
+		pq.Array(entry.Price),
+		entry.Created,
+		entry.Context,
+		pq.Array(entry.Inputs),
+		pq.Array(entry.Outputs),
+		entry.Original,
+	)
+	return err
 }

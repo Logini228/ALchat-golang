@@ -3,7 +3,6 @@ package gocode
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -148,6 +147,6 @@ func Auth(c *gin.Context) {
 		gologs.Error.Println("Unexpected authtype: " + authtype)
 	}
 
-	fmt.Println("auth triggered with authtype: " + authtype)
+	gologs.Info.Println("auth triggered with authtype: " + authtype)
 
 }

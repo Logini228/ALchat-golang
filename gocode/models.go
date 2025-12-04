@@ -1,11 +1,13 @@
 package gocode
 
 import (
-	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/tidwall/gjson"
+
+	"aichat/gologs"
 )
 
 type ModelEntry struct {
@@ -21,27 +23,27 @@ type ModelEntry struct {
 	Original   string
 }
 
-func ModelsOpenRouter() ([]ModelEntry, error) {
+func ModelsOpenRouter() []ModelEntry {
 	url := "https://openrouter.ai/api/v1/models"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		gologs.Error.Printf("failed to create request: %v", err)
 	}
 	req.Header.Add("Authorization", "Bearer "+openrouter_api_key)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		gologs.Error.Printf("failed to send request: %v", err)
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API returned non-200 status: %d", res.StatusCode)
+		gologs.Error.Printf("API returned non-200 status: %d", res.StatusCode)
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		gologs.Error.Printf("failed to read response body: %v", err)
 	}
 
 	var entries []ModelEntry
@@ -50,7 +52,7 @@ func ModelsOpenRouter() ([]ModelEntry, error) {
 
 		entry := ModelEntry{
 			Aggregator: "OpenRouter",
-			Provider:   model.Get("top_provider.context_length").String(), // or use "id" prefix, e.g. strings.Split(model.Get("id").String(), "/")[0]
+			Provider:   strings.Split(model.Get("id").String(), "/")[0],
 			ID:         model.Get("id").String(),
 			Name:       model.Get("name").String(),
 			Created:    model.Get("created").Int(),
@@ -64,7 +66,7 @@ func ModelsOpenRouter() ([]ModelEntry, error) {
 		return true
 	})
 
-	return entries, nil
+	return entries
 }
 
 // Helper function

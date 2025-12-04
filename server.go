@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,7 +22,7 @@ func startServer(router *gin.Engine) {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			gologs.Error.Printf("listen: %s\n", err)
 		}
 	}()
 

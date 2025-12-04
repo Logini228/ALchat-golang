@@ -24,8 +24,9 @@ CREATE TABLE models (
     provider TEXT NOT NULL,
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    price FLOAT[] NOT NULL,
     created BIGINT NOT NULL,
-    context INTEGER,
+    context BIGINT,
     inputs TEXT[] NOT NULL,
     outputs TEXT[] NOT NULL,
     original JSONB NOT NULL DEFAULT '{}'
