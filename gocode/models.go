@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/tidwall/gjson"
 )
 
 type ModelEntry struct {
@@ -41,30 +43,35 @@ func ModelsOpenRouter() ([]ModelEntry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
-	// Parse JSON with gjson
+
 	var entries []ModelEntry
 	gjson.GetBytes(body, "data").ForEach(func(_, model gjson.Result) bool {
+		// Helper to safely get float64 from string or number
+
 		entry := ModelEntry{
-			Aggregator: "OpenRouter",                                      // hardcoded as you wanted
-			Provider:   model.Get("top_provider.context_length").String(), // just an example—replace with real provider if needed
+			Aggregator: "OpenRouter",
+			Provider:   model.Get("top_provider.context_length").String(), // or use "id" prefix, e.g. strings.Split(model.Get("id").String(), "/")[0]
 			ID:         model.Get("id").String(),
 			Name:       model.Get("name").String(),
 			Created:    model.Get("created").Int(),
 			Context:    model.Get("context_length").Int(),
-			// Optional: store pricing as floats
-			Price: []float64{
-				parseFloat(model.Get("pricing.prompt").String()),
-				parseFloat(model.Get("pricing.completion").String()),
-			},
-			// Inputs/Outputs/Original — you’ll need to decide what goes here
-			// If they’re not in the API, maybe leave empty or derive from other fields
-			Inputs:   []string{}, // fill if you have logic
-			Outputs:  []string{}, // fill if you have logic
-			Original: model.Raw,  // <-- this stores the raw JSON of the model object as string
+			Price:      []float64{model.Get("pricing.prompt").Float(), model.Get("pricing.completion").Float()},
+			Inputs:     toStringSlice(model.Get("architecture.input_modalities").Array()),
+			Outputs:    toStringSlice(model.Get("architecture.output_modalities").Array()),
+			Original:   model.Raw,
 		}
 		entries = append(entries, entry)
-		return true // continue iteration
+		return true
 	})
 
 	return entries, nil
+}
+
+// Helper function
+func toStringSlice(results []gjson.Result) []string {
+	s := make([]string, len(results))
+	for i, r := range results {
+		s[i] = r.String()
+	}
+	return s
 }

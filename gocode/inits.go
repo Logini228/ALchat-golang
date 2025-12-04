@@ -14,7 +14,7 @@ func Init() {
 
 	LoadEnv()
 	DBconnect()
-	Request()
+	ModelsOpenRouter()
 }
 
 func LoadEnv() {
