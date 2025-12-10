@@ -18,6 +18,7 @@ func main() {
 	router.GET("/chat/:chatid", gocode.GetChatFromDB)
 	router.POST("/chat", gocode.AskLLM)
 	router.POST("/auth", gocode.Auth)
+	router.POST("/models", gocode.GetModelsFromDB)
 
 	startServer(router)
 

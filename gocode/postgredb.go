@@ -149,3 +149,52 @@ func InsertModelEntry(entry ModelEntry) {
 		gologs.Error.Printf("couldn't insert model entry, %v", err)
 	}
 }
+
+func QueryModels(query string) ([]ModelEntry, error) {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+	}
+	rows, err := db.Query(`
+	SELECT 
+		aggregator, provider, id, name, 
+		price, context, 
+		inputs, outputs
+	FROM models 
+	WHERE 
+		name ILIKE '%' || $1 || '%' OR 
+		id ILIKE '%' || $1 || '%'
+	ORDER BY created DESC
+	`, query)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []ModelEntry
+	for rows.Next() {
+		var entry ModelEntry
+
+		err := rows.Scan(
+			&entry.Aggregator,
+			&entry.Provider,
+			&entry.ID,
+			&entry.Name,
+			pq.Array(&entry.Price),
+			&entry.Context,
+			pq.Array(&entry.Inputs),
+			pq.Array(&entry.Outputs),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, entry)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	fmt.Printf("returning %v results", len(results))
+	return results, nil
+}

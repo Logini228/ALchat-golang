@@ -21,6 +21,7 @@ func GetChatFromDB(c *gin.Context) {
 	messages, err := QueryChatData(chatid)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
+		gologs.Error.Printf("error getting chat from db: %v", err)
 		return
 	}
 
@@ -44,6 +45,7 @@ func AskLLM(c *gin.Context) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		gologs.Error.Printf("error getting response from llm: %v", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -78,6 +80,7 @@ func Auth(c *gin.Context) {
 
 		if err := c.ShouldBindJSON(&loginReq); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			gologs.Error.Printf("error in auth: %v", err)
 			return
 		}
 
@@ -149,4 +152,23 @@ func Auth(c *gin.Context) {
 
 	gologs.Info.Println("auth triggered with authtype: " + authtype)
 
+}
+
+func GetModelsFromDB(c *gin.Context) {
+	var body struct {
+		Input string `json:"input"` // Capital I for exported field
+	}
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
+		gologs.Error.Printf("getmodels failed: %v", err)
+		return
+	}
+
+	models, err := QueryModels(body.Input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		gologs.Error.Printf("getmodels failed: %v", err)
+		return
+	}
+	c.JSON(http.StatusOK, models)
 }
