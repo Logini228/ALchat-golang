@@ -25,11 +25,11 @@
         </sl-details>
         <sl-details class="panel" data-panel-id="2" summary="Models">
           <div class="panel-content">
-            <input type="text" id="searchInput" placeholder="Search for models..." onkeyup="filterCheckboxes()">
+            <input type="text" class="models-input" id="searchInput" placeholder="Search for models..." onkeyup="requestModels()">
             <div class="checkbox-list" id="checkboxList">
               <div class="checkbox-item">
                 <input type="checkbox" id="item1" value="Apple">
-                <label for="item1">Apple</label>
+                <label for="item1">If you see this, something went wrong</label>
               </div>
             </div>
           </div>
@@ -71,8 +71,8 @@
       </div>
 
       <div class="input-footer">
-        <textarea class="auto-grow-textarea"></textarea> </textarea>
-        <sl-button variant="primary">
+        <textarea class="auto-grow-textarea" id="llm_input"></textarea> </textarea>
+        <sl-button variant="primary" onclick="handleChat()">
           <sl-icon name="arrow-return-left" label="Send">
           </sl-icon>
         </sl-button>
@@ -83,6 +83,7 @@
   <script src="jscode/chat.js"></script>
   <script src="jscode/misc.js"></script>
   <script src="jscode/models.js"></script>
+  <script src="jscode/handlers.js"></script> 
 </body>
 
 </html>

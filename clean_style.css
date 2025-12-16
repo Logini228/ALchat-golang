@@ -199,3 +199,7 @@ sl-details::part(summary) {
   overflow: auto; /* ✅ Scrollbar appears here */
   box-sizing: border-box;
 }
+
+.models-input {
+  
+}
