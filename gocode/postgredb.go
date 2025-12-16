@@ -34,7 +34,7 @@ func CloseDB() {
 	}
 }
 
-func InsertChatData(chatid string, sender string, message []byte) {
+func InsertChatData(chatid string, sender string, message string) {
 	if chatid == "0" {
 		return
 	}

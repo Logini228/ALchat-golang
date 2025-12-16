@@ -1,7 +1,6 @@
 package gocode
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -30,38 +29,19 @@ func GetChatFromDB(c *gin.Context) {
 }
 
 func AskLLM(c *gin.Context) {
-	// Get the request body
-	body, _ := io.ReadAll(c.Request.Body)
+	bodyBytes, _ := io.ReadAll(c.Request.Body)
+	requestBody := string(bodyBytes)
 
 	chatid := c.GetHeader("X-chatid")
-	InsertChatData(chatid, "user", body)
+	InsertChatData(chatid, "user", requestBody)
 
-	// Make request to LLM API
-	req, _ := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewBuffer(body))
-	req.Header.Set("Authorization", "Bearer "+openrouter_api_key)
-	req.Header.Set("Content-Type", "application/json")
+	responseBody := callOpenRouter(requestBody)
 
-	// Send request
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		gologs.Error.Printf("error getting response from llm: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	// Read response
-	respBody, _ := io.ReadAll(resp.Body)
-
-	// Parse response to extract the message content
+	// Parse the string response into JSON
 	var result map[string]interface{}
-	json.Unmarshal(respBody, &result)
+	json.Unmarshal([]byte(responseBody), &result) // Convert string back to []byte for JSON parsing
 
-	// Store LLM response to database
-	InsertChatData(chatid, "ai", respBody)
-
-	// Return response
-	c.JSON(resp.StatusCode, result)
+	c.JSON(http.StatusOK, result)
 }
 
 type LoginRequest struct {
