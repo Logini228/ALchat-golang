@@ -13,8 +13,6 @@ function fetchData() {
             "X-chatid": chatid
         },
         body: JSON.stringify({ "model": new String(modelbox.value), "messages": [{ "role": "user", "content": new String(textbox.value) }] })
-        //body: JSON.stringify({id: textbox.value})
-        //body: JSON.stringify({id: "1"})
     })
         .then(response => response.text())
         .then(data => {

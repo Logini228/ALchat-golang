@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 
 	"aichat/gologs"
 )
@@ -31,17 +33,53 @@ func GetChatFromDB(c *gin.Context) {
 func AskLLM(c *gin.Context) {
 	bodyBytes, _ := io.ReadAll(c.Request.Body)
 	requestBody := string(bodyBytes)
-
 	chatid := c.GetHeader("X-chatid")
-	InsertChatData(chatid, "user", requestBody)
 
-	responseBody := callOpenRouter(requestBody)
+	request := gjson.Get(requestBody, "messages.0.content").String()
+	reqModels := gjson.Get(requestBody, "model").Array()
+	messagesgjson := gjson.Get(requestBody, "messages").Array()
 
-	// Parse the string response into JSON
-	var result map[string]interface{}
-	json.Unmarshal([]byte(responseBody), &result) // Convert string back to []byte for JSON parsing
+	var messages []interface{}
+	for _, msg := range messagesgjson {
+		messages = append(messages, msg.Value())
+	}
 
-	c.JSON(http.StatusOK, result)
+	InsertChatData(chatid, "user", request)
+
+	// Set up NDJSON streaming headers
+	c.Header("Content-Type", "application/x-ndjson")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+
+	// WaitGroup to wait for all goroutines to finish
+	var wg sync.WaitGroup
+
+	for _, model := range reqModels {
+		wg.Add(1) // Increment counter
+		go func(m string) {
+			defer wg.Done() // Decrement when done
+
+			response, resModel := callOpenRouter(messages, m) // Pass m (string)
+			if response == "" {
+				gologs.Error.Println("something went wrong in AskLLM")
+				return
+			}
+
+			// Send via NDJSON
+			responseObj := gin.H{
+				"model":    resModel,
+				"response": response,
+			}
+			jsonData, _ := json.Marshal(responseObj)
+			c.Writer.Write(jsonData)
+			c.Writer.WriteString("\n")
+			c.Writer.Flush()
+
+			InsertChatData(chatid, resModel, response)
+		}(model.String()) // Convert gjson.Result to string!
+	}
+
+	wg.Wait() // Wait for all goroutines to complete before function exits
 }
 
 type LoginRequest struct {

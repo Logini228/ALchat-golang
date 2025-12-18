@@ -39,6 +39,10 @@ func InsertChatData(chatid string, sender string, message string) {
 		return
 	}
 
+	if message == "" {
+		return
+	}
+
 	sqlStatement := `
         INSERT INTO chat (chatid, sender, message)
         VALUES ($1, $2, $3)
