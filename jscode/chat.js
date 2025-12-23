@@ -13,9 +13,9 @@ async function requestLLM(models, message) {
                 "Accept": "application/json",
                 "X-chatid": chatid
             },
-            body: JSON.stringify({ 
-                "model": models, 
-                "messages": [{ "role": "user", "content": message }] 
+            body: JSON.stringify({
+                "model": models,
+                "messages": [{ "role": "user", "content": message }]
             })
         });
 
@@ -25,15 +25,15 @@ async function requestLLM(models, message) {
 
         while (true) {
             const { done, value } = await reader.read();
-            
+
             if (done) break;
 
             // Decode chunk and add to buffer
             buffer += decoder.decode(value, { stream: true });
-            
+
             // Split by newlines
             const lines = buffer.split('\n');
-            
+
             // Keep the last incomplete line in buffer
             buffer = lines.pop();
 
@@ -44,9 +44,13 @@ async function requestLLM(models, message) {
                         const data = JSON.parse(line);
                         const model = data.model;
                         const responseText = data.response;
-                        
+
                         // Update UI with each chunk
-                        fillAnswers([model, stylizeJson(responseText)]);
+                        if (model != "error") {
+                            fillAnswers([model, stylizeJson(responseText)]);
+                        } else {
+                            errorToast(responseText)
+                        }
                     } catch (e) {
                         console.error('Failed to parse line:', line, e);
                     }
@@ -105,13 +109,13 @@ function stylizeJson(text) {
 
     // 2. Tables (detect and convert markdown tables)
     html = html.replace(/(\|.+\|[\r\n]+\|[-:\s|]+\|[\r\n]+(?:\|.+\|[\r\n]*)+)/g, (match) => {
-        const rows = match.trim().split('\n').map(row => 
+        const rows = match.trim().split('\n').map(row =>
             row.split('|').slice(1, -1).map(cell => cell.trim())
         );
-        
+
         const header = rows[0];
         const body = rows.slice(2); // Skip separator row
-        
+
         let table = '<table><thead><tr>';
         header.forEach(cell => table += `<th>${cell}</th>`);
         table += '</tr></thead><tbody>';
@@ -145,7 +149,7 @@ function stylizeJson(text) {
 
     // 7. Ordered lists
     html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
-    
+
     // 8. Bold (before italic to avoid conflicts)
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 

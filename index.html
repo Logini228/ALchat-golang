@@ -17,6 +17,20 @@
 </head>
 
 <body>
+
+  <div id="toasts" style="display: none;">
+    <sl-alert id="google_broken" variant="danger" duration="3000" closable stay-open>
+      <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
+      <strong>Error while connecting to Google services</strong><br />
+      Please try again or another method.
+    </sl-alert>
+    <sl-alert id="login_success" variant="success" duration="3000" closable stay-open>
+      <sl-icon slot="icon" name="hand-thumbs-up"></sl-icon>
+      <strong>Successfully logged in</strong><br />
+      Good.
+    </sl-alert>
+  </div>
+
   <div class="main-container">
     <div class="sidebar">
       <div class="panel-container">
@@ -25,7 +39,8 @@
         </sl-details>
         <sl-details class="panel" data-panel-id="2" summary="Models">
           <div class="panel-content">
-            <input type="text" class="models-input" id="searchInput" placeholder="Search for models..." onkeyup="requestModels()">
+            <input type="text" class="models-input" id="searchInput" placeholder="Search for models..."
+              onkeyup="requestModels()">
             <div class="checkbox-list" id="checkboxList">
               <div class="checkbox-item">
                 <input type="checkbox" id="item1" value="Apple">
@@ -83,7 +98,8 @@
   <script src="jscode/chat.js"></script>
   <script src="jscode/misc.js"></script>
   <script src="jscode/models.js"></script>
-  <script src="jscode/handlers.js"></script> 
+  <script src="jscode/handlers.js"></script>
+  <script src="jscode/login.js"></script>
 </body>
 
 </html>

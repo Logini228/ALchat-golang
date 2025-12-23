@@ -55,7 +55,7 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 
 	// Check for HTTP errors
 	if resp.StatusCode != 200 {
-		responseBodyParsed := gjson.Get(responseBody, "error.metadata.raw").String()
+		responseBodyParsed := gjson.Get(responseBody, "error.message").String()
 		gologs.Error.Printf("API returned error status %d: %s", resp.StatusCode, responseBodyParsed)
 		return responseBodyParsed, "error"
 	}
