@@ -18,10 +18,13 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 		"messages": messages, // Use converted messages
 	}
 
+	var response = ""
+	var model = ""
+
 	jsonData, err := json.Marshal(requestObj)
 	if err != nil {
 		gologs.Error.Printf("Failed to marshal request: %v", err)
-		return "", "error"
+		return err.Error(), "error"
 	}
 
 	req, err := http.NewRequest("POST",
@@ -29,7 +32,7 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 		bytes.NewBuffer(jsonData))
 	if err != nil {
 		gologs.Error.Printf("Failed to create request: %v", err)
-		return "", "error"
+		return err.Error(), "error"
 	}
 
 	req.Header.Set("Authorization", "Bearer "+openrouter_api_key)
@@ -38,7 +41,7 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		gologs.Error.Printf("Failed to send request: %v", err)
-		return "", "error"
+		return err.Error(), "error"
 	}
 	defer resp.Body.Close()
 
@@ -46,18 +49,19 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		gologs.Error.Printf("Failed to read response: %v", err)
-		return "", "error"
+		return err.Error(), "error"
 	}
 	responseBody := string(respBytes)
 
 	// Check for HTTP errors
 	if resp.StatusCode != 200 {
-		gologs.Error.Printf("API returned error status %d: %s", resp.StatusCode, responseBody)
-		return "", "error"
+		responseBodyParsed := gjson.Get(responseBody, "error.metadata.raw").String()
+		gologs.Error.Printf("API returned error status %d: %s", resp.StatusCode, responseBodyParsed)
+		return responseBodyParsed, "error"
 	}
 
-	response := gjson.Get(responseBody, "choices.0.message.content").String()
-	model := gjson.Get(responseBody, "model").String()
+	response = gjson.Get(responseBody, "choices.0.message.content").String()
+	model = gjson.Get(responseBody, "model").String()
 
 	return response, model
 }
