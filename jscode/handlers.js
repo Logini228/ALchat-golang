@@ -13,5 +13,5 @@ function handleChat() {
     createAnswers(ids)
     requestLLM(ids, llmInput)
 
-    document.getElementById("llm_input").value = ""
+    document.getElementById("llm-input").value = ""
 }
