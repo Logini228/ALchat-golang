@@ -43,13 +43,14 @@ async function requestLLM(models, message) {
                     try {
                         const data = JSON.parse(line);
                         const model = data.model;
+                        const success = data.success
                         const responseText = data.response;
 
                         // Update UI with each chunk
-                        if (model != "error") {
+                        if (success) {
                             fillAnswers([model, stylizeJson(responseText)]);
                         } else {
-                            errorToast(responseText)
+                            fillErrors([model, responseText])
                         }
                     } catch (e) {
                         console.error('Failed to parse line:', line, e);

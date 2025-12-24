@@ -59,7 +59,7 @@ func AskLLM(c *gin.Context) {
 		go func(m string) {
 			defer wg.Done() // Decrement when done
 
-			response, resModel := callOpenRouter(messages, m) // Pass m (string)
+			response, resModel, success := callOpenRouter(messages, m) // Pass m (string)
 			if response == "" {
 				gologs.Error.Println("something went wrong in AskLLM")
 				return
@@ -69,6 +69,7 @@ func AskLLM(c *gin.Context) {
 			responseObj := gin.H{
 				"model":    resModel,
 				"response": response,
+				"success":  success,
 			}
 			jsonData, _ := json.Marshal(responseObj)
 			c.Writer.Write(jsonData)

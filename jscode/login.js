@@ -5,73 +5,6 @@ const closeBtn = document.getElementById('closeBtn');
 
 console.log("login.js loaded")
 
-// Global click handler to close dropdown when clicking outside
-document.addEventListener('click', function (e) {
-    if (loginDropdown.classList.contains('show')) {
-        // Check if click is outside the login dropdown and login button
-        if (!loginDropdown.contains(e.target) && !loginToggle.contains(e.target)) {
-            closeLoginDropdown();
-        }
-    }
-});
-
-// Toggle login dropdown
-loginToggle.addEventListener('click', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleLoginDropdown();
-});
-
-// Close dropdown when clicking close button
-closeBtn.addEventListener('click', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    closeLoginDropdown();
-});
-
-// Prevent all clicks inside dropdown from closing it
-loginDropdown.addEventListener('click', function (e) {
-    e.stopPropagation();
-});
-
-loginDropdown.addEventListener('mousedown', function (e) {
-    e.stopPropagation();
-});
-
-// Close dropdown when pressing Escape
-document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-        closeLoginDropdown();
-    }
-});
-
-
-function closeLoginDropdown() {
-    loginDropdown.classList.remove('show');
-    loginToggle.classList.remove('active');
-
-    // Reset form
-    document.getElementById('loginForm').reset();
-    document.getElementById('emailError').style.display = 'none';
-    document.getElementById('passwordError').style.display = 'none';
-    document.getElementById('successMessage').style.display = 'none';
-}
-
-
-function toggleLoginDropdown() {
-    if (loginDropdown.classList.contains('show')) {
-        closeLoginDropdown();
-    } else {
-        openLoginDropdown();
-    }
-}
-
-function openLoginDropdown() {
-    loginDropdown.classList.add('show');
-    loginToggle.classList.add('active');
-    document.getElementById('email').focus();
-}
-
 function validate() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -103,17 +36,17 @@ function validate() {
 }
 
 // Traditional form login
-document.getElementById('loginForm').addEventListener('submit', function (e) {
-    e.preventDefault();
+//document.getElementById('loginForm').addEventListener('submit', function (e) {
+//    e.preventDefault();
     // Get the values, not the elements
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    if (validate()) {
-        console.log('Login attempt:', email, password);
-        auth("login", grecaptcha.getResponse(), email, password)
-    }
-});
+//    const email = document.getElementById('email').value;
+//    const password = document.getElementById('password').value;
+//
+//    if (validate()) {
+//        console.log('Login attempt:', email, password);
+//        auth("login", grecaptcha.getResponse(), email, password)
+//    }
+//});
 
 function Register() {
     if (validate()) {
@@ -190,7 +123,7 @@ function signInWithGoogle() {
                 const code = new URL(popup.location.href).searchParams.get('code');
                 popup.close();
                 clearInterval(timer);
-                if (!code) return document.getElementById('google_broken').cloneNode(true).toast();
+                if (!code) return errorToast("auth fail");
                 fetch('http://localhost:8080/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-authtype': 'google' },
@@ -199,15 +132,10 @@ function signInWithGoogle() {
                     .then(d => {
                         const parsed = typeof d === 'string' ? JSON.parse(d) : d;
                         if (parsed.status === "Login success") {
-                            LoginSuccessToast();
+                            successToast("login success");
                         }
                     });
             }
         } catch (_) { }
     }, 500);
 };
-
-function LoginSuccessToast() {
-    document.getElementById('login_success').cloneNode(true).toast()
-}
-//auth("google")

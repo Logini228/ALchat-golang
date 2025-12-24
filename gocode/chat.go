@@ -11,7 +11,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
+func callOpenRouter(messages []interface{}, reqModel string) (string, string, bool) {
 
 	requestObj := gin.H{
 		"model":    reqModel,
@@ -24,7 +24,7 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 	jsonData, err := json.Marshal(requestObj)
 	if err != nil {
 		gologs.Error.Printf("Failed to marshal request: %v", err)
-		return err.Error(), "error"
+		return err.Error(), reqModel, false
 	}
 
 	req, err := http.NewRequest("POST",
@@ -32,7 +32,7 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 		bytes.NewBuffer(jsonData))
 	if err != nil {
 		gologs.Error.Printf("Failed to create request: %v", err)
-		return err.Error(), "error"
+		return err.Error(), reqModel, false
 	}
 
 	req.Header.Set("Authorization", "Bearer "+openrouter_api_key)
@@ -41,7 +41,7 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		gologs.Error.Printf("Failed to send request: %v", err)
-		return err.Error(), "error"
+		return err.Error(), reqModel, false
 	}
 	defer resp.Body.Close()
 
@@ -49,7 +49,7 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		gologs.Error.Printf("Failed to read response: %v", err)
-		return err.Error(), "error"
+		return err.Error(), reqModel, false
 	}
 	responseBody := string(respBytes)
 
@@ -57,11 +57,11 @@ func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 	if resp.StatusCode != 200 {
 		responseBodyParsed := gjson.Get(responseBody, "error.message").String()
 		gologs.Error.Printf("API returned error status %d: %s", resp.StatusCode, responseBodyParsed)
-		return responseBodyParsed, "error"
+		return responseBodyParsed, reqModel, false
 	}
 
 	response = gjson.Get(responseBody, "choices.0.message.content").String()
 	model = gjson.Get(responseBody, "model").String()
 
-	return response, model
+	return response, model, true
 }

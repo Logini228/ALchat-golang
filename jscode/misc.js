@@ -74,6 +74,29 @@ function fillAnswers([s, ss]) {
   }
 }
 
+// Function to fill the latest sl-details with a specific summary and enable it
+function fillErrors([s, ss]) {
+  const allDetails = document.querySelectorAll('sl-details');
+  let targetElement = null;
+
+  // Find the latest sl-details with the specified summary text
+  for (let i = allDetails.length - 1; i >= 0; i--) {
+    const summarySlot = allDetails[i].querySelector('[slot="summary"]');
+    if (summarySlot && summarySlot.textContent === s) {
+      targetElement = allDetails[i];
+      break;
+    }
+  }
+
+  if (targetElement) {
+    // Add the content inside the sl-details
+    sss = '<sl-tag variant="danger"> ' + ss + "</sl-tag>"
+    targetElement.innerHTML += sss;
+    // Remove the disabled property
+    targetElement.disabled = false;
+  }
+}
+
 // Function to add event listener to a details-group container
 function addDetailsEventListener(container) {
   container.addEventListener('sl-show', event => {
