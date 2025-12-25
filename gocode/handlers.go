@@ -149,7 +149,9 @@ func Auth(c *gin.Context) {
 			return
 		}
 
-		if VerifyLoginGoogle(body.Code) {
+		_, verified := VerifyLoginGoogle(body.Code)
+
+		if verified {
 			c.JSON(200, gin.H{
 				"status": "Login success",
 				"token":  "",

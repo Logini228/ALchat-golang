@@ -22,24 +22,24 @@ import (
 var jwt_secret_key string
 var google_recaptcha_site string
 
-func CreateJWT(uuid string, email string) {
+func CreateJWT(uuid string, email string, hours time.Duration) {
 	// Create a new token object
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":   uuid,
 		"email": email,
 		"iat":   time.Now().Unix(),
-		"exp":   time.Now().Add(time.Hour * 24).Unix(),
+		"exp":   time.Now().Add(time.Hour * hours).Unix(),
 	})
 
 	// Sign the token with a secret key
 	secretKey := []byte(jwt_secret_key)
 	signedToken, err := token.SignedString(secretKey)
 	if err != nil {
-		fmt.Println("Error signing token:", err)
+		gologs.Error.Println("Error signing token:", err)
 		return
 	}
 
-	fmt.Println("Signed JWT:", signedToken)
+	gologs.Info.Println("Signed JWT:", signedToken)
 }
 
 func ParseJWT(tokenString string) {
@@ -52,33 +52,33 @@ func ParseJWT(tokenString string) {
 	})
 
 	if err != nil {
-		fmt.Println("Error parsing token:", err)
+		gologs.Error.Println("Error parsing token:", err)
 		return
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		fmt.Printf("Token claims: %v\n", claims)
+		gologs.Info.Printf("Token claims: %v\n", claims)
 	} else {
-		fmt.Println("Invalid token")
+		gologs.Error.Println("Invalid token")
 	}
 }
 
 func LoginWithCredentials(email string, password string) bool {
 	if LoginWithDB(email, password) == "" {
-		fmt.Println("no success")
+		gologs.Error.Println("no success")
 		return false
 	} else {
-		fmt.Println("success")
+		gologs.Info.Println("success")
 		return true
 	}
 }
 
 func RegisterWithCredentials(email string, password string) bool {
 	if RegisterWithDB(email, password) {
-		fmt.Println("no success")
+		gologs.Error.Println("no success")
 		return false
 	} else {
-		fmt.Println("success")
+		gologs.Info.Println("success")
 		return true
 	}
 }
@@ -87,8 +87,14 @@ func ResetPassword(email string) {
 
 }
 
-func VerifyLoginGoogle(code string) bool {
-	// exchange
+type GoogleUser struct {
+	Sub    string `json:"sub"` // Google's user ID (sub)
+	Email  string `json:"email"`
+	Name   string `json:"name"`    // This is the "login" / display name
+	Avatar string `json:"picture"` // Profile picture URL
+}
+
+func VerifyLoginGoogle(code string) (*GoogleUser, bool) {
 	form := url.Values{}
 	form.Set("client_id", os.Getenv("GOOGLE_CLIENT_ID"))
 	form.Set("client_secret", os.Getenv("GOOGLE_CLIENT_SECRET"))
@@ -99,28 +105,41 @@ func VerifyLoginGoogle(code string) bool {
 	resp, err := http.PostForm("https://oauth2.googleapis.com/token", form)
 	if err != nil || resp.StatusCode != 200 {
 		gologs.Error.Println("Something wrong with user's google code")
-		return false
+		return nil, false
 	}
-	var tok struct {
+	defer resp.Body.Close()
+
+	var tokenResponse struct {
 		AccessToken string `json:"access_token"`
 	}
-	json.NewDecoder(resp.Body).Decode(&tok)
-	resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+		gologs.Error.Println("Failed to decode token response:", err)
+		return nil, false
+	}
 
-	// user info
+	// Get user info
 	req, _ := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v2/userinfo", nil)
-	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+tokenResponse.AccessToken)
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil || resp.StatusCode != 200 {
 		gologs.Error.Println("Something wrong with user info")
-		return false
+		return nil, false
 	}
 	defer resp.Body.Close()
-	user, _ := io.ReadAll(resp.Body)
 
-	_ = user
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		gologs.Error.Println("Failed to read user info response:", err)
+		return nil, false
+	}
 
-	return true
+	var user GoogleUser
+	if err := json.Unmarshal(body, &user); err != nil {
+		gologs.Error.Println("Failed to unmarshal user info:", err)
+		return nil, false
+	}
+
+	return &user, true
 }
 
 func VerifyRecaptcha(token string) bool {
@@ -148,7 +167,7 @@ func VerifyRecaptcha(token string) bool {
 	// Call the API
 	response, err := client.CreateAssessment(ctx, request)
 	if err != nil {
-		gologs.Error.Println("assessment failed: %w", err)
+		gologs.Error.Printf("assessment failed: %v", err)
 		return false
 	}
 
