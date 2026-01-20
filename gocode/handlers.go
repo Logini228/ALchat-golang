@@ -149,12 +149,14 @@ func Auth(c *gin.Context) {
 			return
 		}
 
-		_, verified := VerifyLoginGoogle(body.Code)
+		user, verified := VerifyLoginGoogle(body.Code)
 
 		if verified {
+			uuid, email := GoogleToDB(user)
+			token := CreateJWT(uuid, email, true)
 			c.JSON(200, gin.H{
 				"status": "Login success",
-				"token":  "",
+				"token":  token,
 			})
 		} else {
 			c.JSON(200, gin.H{

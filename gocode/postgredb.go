@@ -95,6 +95,32 @@ func LoginWithDB(email string, password string) string {
 	return uuid
 }
 
+func GoogleToDB(user *GoogleUser) (string, string) {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+	}
+	var uuid string
+	err := db.QueryRow(`
+    INSERT INTO users (
+        email, googlesub, name, avatar
+    ) VALUES (
+        $1, $2, $3, $4
+    )
+    ON CONFLICT (googlesub) DO NOTHING
+    RETURNING uuid
+`,
+		user.Email,
+		user.Sub,
+		user.Name,
+		user.Avatar,
+	).Scan(&uuid)
+	if err != nil {
+		gologs.Error.Printf("couldn't insert google user entry, %v", err)
+	}
+
+	return uuid, user.Email
+}
+
 func RegisterWithDB(email string, password string) bool {
 
 	sqlStatementCheck := `

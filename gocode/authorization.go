@@ -22,13 +22,19 @@ import (
 var jwt_secret_key string
 var google_recaptcha_site string
 
-func CreateJWT(uuid string, email string, hours time.Duration) {
+func CreateJWT(uuid string, email string, long bool) string {
+	var addTime time.Duration
+	if long {
+		addTime = time.Hour * 2160 // 3 months
+	} else {
+		addTime = time.Minute * 15 // 15 minutes
+	}
 	// Create a new token object
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":   uuid,
+		"uuid":  uuid,
 		"email": email,
 		"iat":   time.Now().Unix(),
-		"exp":   time.Now().Add(time.Hour * hours).Unix(),
+		"exp":   time.Now().Add(addTime).Unix(),
 	})
 
 	// Sign the token with a secret key
@@ -36,10 +42,10 @@ func CreateJWT(uuid string, email string, hours time.Duration) {
 	signedToken, err := token.SignedString(secretKey)
 	if err != nil {
 		gologs.Error.Println("Error signing token:", err)
-		return
+		return " "
 	}
 
-	gologs.Info.Println("Signed JWT:", signedToken)
+	return signedToken
 }
 
 func ParseJWT(tokenString string) {
