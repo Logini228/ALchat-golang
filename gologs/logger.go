@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	Info  *log.Logger
-	Error *log.Logger
+	Info    *log.Logger
+	Warning *log.Logger
+	Error   *log.Logger
 )
 
 // Init sets up the rolling file + optional stdout/stderr.
@@ -25,5 +26,6 @@ func Init() {
 	}
 
 	Info = log.New(io.MultiWriter(w, os.Stdout), "INFO  ", log.LstdFlags)
+	Warning = log.New(io.MultiWriter(w, os.Stderr), "WARNING ", log.LstdFlags|log.Lshortfile)
 	Error = log.New(io.MultiWriter(w, os.Stderr), "ERROR ", log.LstdFlags|log.Lshortfile)
 }

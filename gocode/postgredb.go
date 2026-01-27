@@ -20,11 +20,9 @@ func DBconnect() {
 	if err != nil {
 		gologs.Error.Println("Failed to open database:", err)
 	}
-
 	if err = db.Ping(); err != nil {
 		gologs.Error.Println("Failed to connect to database:", err)
 	}
-
 	gologs.Info.Println("Successfully connected to the database!")
 }
 
@@ -122,7 +120,9 @@ func GoogleToDB(user *GoogleUser) (string, string) {
 }
 
 func RegisterWithDB(email string, password string) bool {
-
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+	}
 	sqlStatementCheck := `
     SELECT uuid FROM users
 	WHERE email = ($1)`
@@ -148,6 +148,31 @@ func RegisterWithDB(email string, password string) bool {
 	}
 
 	return true
+}
+
+func InsertJTI(jti string, uuid string) {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+		return
+	}
+
+	sqlStatement := `
+    	UPDATE users
+		SET jtis = array_append(jtis, $1)
+		WHERE uuid = $2;`
+
+	result, err := db.Exec(sqlStatement, jti, uuid)
+	if err != nil {
+		gologs.Error.Printf("couldn't insert jti: %v", err)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		gologs.Error.Printf("error inserting jti, checking rows affected: %v", err)
+	} else if rowsAffected == 0 {
+		gologs.Warning.Printf("couldn't insert jti to user with uuid: %s", uuid)
+	}
 }
 
 func InsertModelEntry(entry ModelEntry) {

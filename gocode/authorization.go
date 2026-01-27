@@ -3,6 +3,8 @@ package gocode
 import (
 	"aichat/gologs"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,6 +35,7 @@ func CreateJWT(uuid string, email string, long bool) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"uuid":  uuid,
 		"email": email,
+		"jti":   generateJTI(),
 		"iat":   time.Now().Unix(),
 		"exp":   time.Now().Add(addTime).Unix(),
 	})
@@ -185,4 +188,14 @@ func VerifyRecaptcha(token string) bool {
 
 	// Return success and risk score
 	return true
+}
+
+// this function I found looks like magic in a sense that I have no idea what it does
+func generateJTI() string {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		gologs.Error.Println("Apparently system entropy has failed")
+	}
+	return hex.EncodeToString(b)
 }

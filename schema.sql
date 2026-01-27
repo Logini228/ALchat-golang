@@ -10,7 +10,8 @@ CREATE TABLE users (
     password TEXT NOT NULL,
     googlesub TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
-    avatar TEXT NOT NULL
+    avatar TEXT NOT NULL,
+    jtis TEXT[]
 );
 
 -- Chat table
