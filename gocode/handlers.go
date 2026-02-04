@@ -14,6 +14,8 @@ import (
 
 var openrouter_api_key string
 
+const tenYears = 60 * 60 * 24 * 365 * 10 // 315,360,000 seconds
+
 func GetChatFromDB(c *gin.Context) {
 	// Read request
 	chatid := c.Param("chatid")
@@ -159,7 +161,7 @@ func Auth(c *gin.Context) {
 			c.SetCookie(
 				"longJWT", // cookie name
 				token,     // cookie value
-				86400*7,   // max age in seconds (7 days for "long" token)
+				tenYears,  // max age
 				"/",       // path
 				"",        // domain (empty = current domain)
 				true,      // secure (HTTPS only)
@@ -181,13 +183,22 @@ func Auth(c *gin.Context) {
 
 	case "loginJWT":
 
-		validJWT := true
+		var body struct {
+			Token string `json:"jwt"`
+		}
+		if c.BindJSON(&body) != nil || body.Token == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "missing code"})
+			return
+		}
+
+		validJWT, uuid, email := ParseJWT(body.Token)
 
 		if validJWT {
+			token := CreateJWT(uuid, email, false) // true for long
 			c.SetCookie(
 				"shortJWT", // cookie name
 				token,      // cookie value
-				86400*7,    // max age in seconds (7 days for "long" token)
+				tenYears,   // max age
 				"/",        // path
 				"",         // domain (empty = current domain)
 				true,       // secure (HTTPS only)

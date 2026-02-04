@@ -56,7 +56,8 @@ func CreateJWT(uuid string, email string, long bool) string {
 	return signedToken
 }
 
-func ParseJWT(tokenString string) {
+func ParseJWT(tokenString string) (bool, string, string) {
+	// Parse the token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Validate the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -66,15 +67,32 @@ func ParseJWT(tokenString string) {
 	})
 
 	if err != nil {
-		gologs.Error.Println("Error parsing token:", err)
-		return
+		gologs.Error.Println("Error parsing JWT token:", err)
+		return false, "", ""
 	}
 
+	// Check if the token is valid and extract claims
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		gologs.Info.Printf("Token claims: %v\n", claims)
-	} else {
-		gologs.Error.Println("Invalid token")
+
+		// Extract UUID and type assert to string
+		uuid, uuidOk := claims["uuid"].(string)
+		if !uuidOk {
+			gologs.Error.Println("JWT Token valid but missing uuid claim")
+			return false, "", ""
+		}
+
+		// Extract Email and type assert to string
+		email, emailOk := claims["email"].(string)
+		if !emailOk {
+			gologs.Error.Println("JWT Token valid but missing email claim")
+			return false, "", ""
+		}
+
+		return true, uuid, email
 	}
+
+	gologs.Error.Println("Invalid JWT token")
+	return false, "", ""
 }
 
 func LoginWithCredentials(email string, password string) bool {
