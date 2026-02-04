@@ -31,11 +31,14 @@ func CreateJWT(uuid string, email string, long bool) string {
 	} else {
 		addTime = time.Minute * 15 // 15 minutes
 	}
+
+	jti := generateJTI()
+
 	// Create a new token object
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"uuid":  uuid,
 		"email": email,
-		"jti":   generateJTI(),
+		"jti":   jti,
 		"iat":   time.Now().Unix(),
 		"exp":   time.Now().Add(addTime).Unix(),
 	})
@@ -47,6 +50,8 @@ func CreateJWT(uuid string, email string, long bool) string {
 		gologs.Error.Println("Error signing token:", err)
 		return " "
 	}
+
+	InsertJTI(jti, uuid)
 
 	return signedToken
 }
@@ -97,7 +102,7 @@ func ResetPassword(email string) {
 }
 
 type GoogleUser struct {
-	Sub    string `json:"sub"` // Google's user ID (sub)
+	ID     string `json:"id"` // Google's user ID
 	Email  string `json:"email"`
 	Name   string `json:"name"`    // This is the "login" / display name
 	Avatar string `json:"picture"` // Profile picture URL
@@ -148,6 +153,9 @@ func VerifyLoginGoogle(code string) (*GoogleUser, bool) {
 		return nil, false
 	}
 
+	gologs.Info.Printf("Google auth success - id: %s, email: %s, name: %s",
+		user.ID, user.Email, user.Name)
+	gologs.Info.Println("Raw body:", string(body))
 	return &user, true
 }
 

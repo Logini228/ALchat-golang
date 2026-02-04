@@ -153,10 +153,22 @@ func Auth(c *gin.Context) {
 
 		if verified {
 			uuid, email := GoogleToDB(user)
-			token := CreateJWT(uuid, email, true)
+			token := CreateJWT(uuid, email, true) // true for long
+
+			// Set the token as an httpOnly cookie
+			c.SetCookie(
+				"longJWT", // cookie name
+				token,     // cookie value
+				86400*7,   // max age in seconds (7 days for "long" token)
+				"/",       // path
+				"",        // domain (empty = current domain)
+				true,      // secure (HTTPS only)
+				true,      // httpOnly (JS can't access it)
+			)
+
+			// Return only status to client (token is in cookie)
 			c.JSON(200, gin.H{
 				"status": "Login success",
-				"token":  token,
 			})
 		} else {
 			c.JSON(200, gin.H{
@@ -169,6 +181,20 @@ func Auth(c *gin.Context) {
 
 	case "loginJWT":
 
+		validJWT := true
+
+		if validJWT {
+			c.SetCookie(
+				"shortJWT", // cookie name
+				token,      // cookie value
+				86400*7,    // max age in seconds (7 days for "long" token)
+				"/",        // path
+				"",         // domain (empty = current domain)
+				true,       // secure (HTTPS only)
+				true,       // httpOnly (JS can't access it)
+			)
+		}
+
 	default:
 		gologs.Error.Println("Unexpected authtype: " + authtype)
 	}
@@ -179,7 +205,7 @@ func Auth(c *gin.Context) {
 
 func GetModelsFromDB(c *gin.Context) {
 	var body struct {
-		Input string `json:"input"` // Capital I for exported field
+		Input string `json:"input"`
 	}
 	if err := c.BindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})

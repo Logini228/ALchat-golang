@@ -100,15 +100,15 @@ func GoogleToDB(user *GoogleUser) (string, string) {
 	var uuid string
 	err := db.QueryRow(`
     INSERT INTO users (
-        email, googlesub, name, avatar
+        email, googleid, name, avatar
     ) VALUES (
         $1, $2, $3, $4
     )
-    ON CONFLICT (googlesub) DO NOTHING
+    ON CONFLICT (googleid) DO NOTHING
     RETURNING uuid
 `,
 		user.Email,
-		user.Sub,
+		user.ID,
 		user.Name,
 		user.Avatar,
 	).Scan(&uuid)

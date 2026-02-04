@@ -7,10 +7,10 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE users (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    googlesub TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    avatar TEXT NOT NULL,
+    password TEXT,
+    googleid TEXT UNIQUE,
+    name TEXT,
+    avatar TEXT,
     jtis TEXT[]
 );
 
