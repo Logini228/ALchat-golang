@@ -17,12 +17,14 @@ import (
 	recaptcha "cloud.google.com/go/recaptchaenterprise/v2/apiv1"
 	recaptchapb "cloud.google.com/go/recaptchaenterprise/v2/apiv1/recaptchaenterprisepb"
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/api/option"
 	//"github.com/googleapis/google-api-go-client"
 )
 
 var jwt_secret_key string
 var google_recaptcha_site string
+var password_secret_key string
 
 func CreateJWT(uuid string, email string, long bool) string {
 	var addTime time.Duration
@@ -122,8 +124,8 @@ func ResetPassword(email string) {
 type GoogleUser struct {
 	ID     string `json:"id"` // Google's user ID
 	Email  string `json:"email"`
-	Name   string `json:"name"`    // This is the "login" / display name
-	Avatar string `json:"picture"` // Profile picture URL
+	Name   string `json:"given_name"` // This is the "login" / display name
+	Avatar string `json:"picture"`    // Profile picture URL
 }
 
 func VerifyLoginGoogle(code string) (*GoogleUser, bool) {
@@ -171,9 +173,6 @@ func VerifyLoginGoogle(code string) (*GoogleUser, bool) {
 		return nil, false
 	}
 
-	gologs.Info.Printf("Google auth success - id: %s, email: %s, name: %s",
-		user.ID, user.Email, user.Name)
-	gologs.Info.Println("Raw body:", string(body))
 	return &user, true
 }
 
@@ -224,4 +223,27 @@ func generateJTI() string {
 		gologs.Error.Println("Apparently system entropy has failed")
 	}
 	return hex.EncodeToString(b)
+}
+
+func HashPassword(password string) string {
+	// 14 is the cost factor. Higher = more secure but slower.
+	// 10-14 is standard for web apps.
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	if err != nil {
+		gologs.Error.Println("Failed to hash password:", err)
+		return ""
+	}
+	gologs.Info.Println("Password hashed successfully")
+	return string(bytes)
+}
+
+func CheckPassword(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	if err != nil {
+		// This is expected if the password is wrong, so we log as Warning or Info, not Error
+		gologs.Warning.Println("Password verification failed:", err)
+		return false
+	}
+	gologs.Info.Println("Password verified successfully")
+	return true
 }

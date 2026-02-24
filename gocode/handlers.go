@@ -175,7 +175,6 @@ func Auth(c *gin.Context) {
 		} else {
 			c.JSON(200, gin.H{
 				"status": "Login not success",
-				"token":  "",
 			})
 		}
 
@@ -211,7 +210,6 @@ func Auth(c *gin.Context) {
 	}
 
 	gologs.Info.Println("auth triggered with authtype: " + authtype)
-
 }
 
 func GetModelsFromDB(c *gin.Context) {

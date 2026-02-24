@@ -81,13 +81,21 @@ func LoginWithDB(email string, password string) string {
 	}
 
 	sqlStatement := `
-    SELECT uuid FROM users
-	WHERE email = ($1) AND password = ($2)`
+    SELECT uuid, password_hash 
+	FROM users
+	WHERE email = $1`
 
 	var uuid string
-	err := db.QueryRow(sqlStatement, email, password).Scan(&uuid)
+	var password_hash string
+	err := db.QueryRow(sqlStatement, email).Scan(&uuid, &password_hash)
 	if err != nil {
-		gologs.Error.Println("wrong email or password")
+		gologs.Warning.Println("Authentication failed:", err)
+		return ""
+	}
+
+	if !CheckPassword(password, password_hash) {
+		gologs.Warning.Println("Password mismatch for email:", email)
+		return ""
 	}
 
 	return uuid
@@ -138,13 +146,14 @@ func RegisterWithDB(email string, password string) bool {
 	}
 
 	sqlStatement := `
-        INSERT INTO users (email, password)
+        INSERT INTO users (email, password_hash)
         VALUES ($1, $2)
         RETURNING uuid`
 
-	err2 := db.QueryRow(sqlStatement, email, password).Scan(&uuid)
+	password_hash := HashPassword(password)
+	err2 := db.QueryRow(sqlStatement, email, password_hash).Scan(&uuid)
 	if err2 != nil {
-		gologs.Error.Println("couldnt register")
+		gologs.Error.Println("couldnt register at email: ", email)
 	}
 
 	return true
@@ -250,6 +259,5 @@ func QueryModels(query string) ([]ModelEntry, error) {
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	fmt.Printf("returning %v results", len(results))
 	return results, nil
 }
