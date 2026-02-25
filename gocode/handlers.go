@@ -164,7 +164,7 @@ func Auth(c *gin.Context) {
 				tenYears,  // max age
 				"/",       // path
 				"",        // domain (empty = current domain)
-				true,      // secure (HTTPS only)
+				(!Debug),  // secure (HTTPS only)
 				true,      // httpOnly (JS can't access it)
 			)
 
@@ -181,32 +181,60 @@ func Auth(c *gin.Context) {
 	case "reset":
 
 	case "loginJWT":
-
-		var body struct {
-			Token string `json:"jwt"`
-		}
-		if c.BindJSON(&body) != nil || body.Token == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "missing code"})
+		longToken, err := c.Cookie("longJWT") // ← use cookie name here
+		if err != nil || longToken == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
 			return
 		}
 
-		validJWT, uuid, email := ParseJWT(body.Token)
-
-		if validJWT {
-			token := CreateJWT(uuid, email, false) // true for long
-			c.SetCookie(
-				"shortJWT", // cookie name
-				token,      // cookie value
-				tenYears,   // max age
-				"/",        // path
-				"",         // domain (empty = current domain)
-				true,       // secure (HTTPS only)
-				true,       // httpOnly (JS can't access it)
-			)
+		valid, uuid, email := ParseJWT(longToken)
+		if !valid || uuid == "" || email == "" {
+			gologs.Warning.Println("loginJWT: invalid or expired long token")
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
+			return
 		}
+
+		shortToken := CreateJWT(uuid, email, false) // false = short expiry
+		c.SetCookie(
+			"shortJWT",
+			shortToken,
+			tenYears, // 30 minutes in seconds
+			"/",
+			"",
+			!Debug, // secure only in prod
+			true,   // httpOnly
+		)
+		c.JSON(http.StatusOK, gin.H{"status": "token success"})
+
+	case "refreshJWT":
+		longToken, err := c.Cookie("longJWT") // ← use cookie name here
+		if err != nil || longToken == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
+			return
+		}
+
+		valid, uuid, email := ParseJWT(longToken)
+		if !valid || uuid == "" || email == "" {
+			gologs.Warning.Println("refreshJWT: invalid or expired long token")
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
+			return
+		}
+
+		shortToken := CreateJWT(uuid, email, false) // false = short expiry
+		c.SetCookie(
+			"shortJWT",
+			shortToken,
+			tenYears, // 30 minutes in seconds
+			"/",
+			"",
+			!Debug, // secure only in prod
+			true,   // httpOnly
+		)
+		c.JSON(http.StatusOK, gin.H{"status": "token success"})
 
 	default:
 		gologs.Error.Println("Unexpected authtype: " + authtype)
+		return
 	}
 
 	gologs.Info.Println("auth triggered with authtype: " + authtype)

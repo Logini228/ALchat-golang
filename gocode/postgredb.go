@@ -151,6 +151,11 @@ func RegisterWithDB(email string, password string) bool {
         RETURNING uuid`
 
 	password_hash := HashPassword(password)
+	if password_hash == "" {
+		gologs.Warning.Println("error hashing password at email: ", email)
+		return false
+	}
+
 	err2 := db.QueryRow(sqlStatement, email, password_hash).Scan(&uuid)
 	if err2 != nil {
 		gologs.Error.Println("couldnt register at email: ", email)
@@ -260,4 +265,24 @@ func QueryModels(query string) ([]ModelEntry, error) {
 		return nil, err
 	}
 	return results, nil
+}
+
+func QueryUser(uuid string) (string, string) {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+	}
+
+	sqlStatement := `
+    	SELECT name, avatar
+		FROM users
+		WHERE uuid = $1`
+
+	var name string
+	var avatar string
+	err := db.QueryRow(sqlStatement, uuid).Scan(&name, &avatar)
+	if err != nil {
+		gologs.Warning.Println("Query user failed:", err)
+		return "", ""
+	}
+	return name, avatar
 }

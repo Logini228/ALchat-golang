@@ -211,7 +211,6 @@ func VerifyRecaptcha(token string) bool {
 		return false
 	}
 
-	// Return success and risk score
 	return true
 }
 
@@ -226,9 +225,8 @@ func generateJTI() string {
 }
 
 func HashPassword(password string) string {
-	// 14 is the cost factor. Higher = more secure but slower.
-	// 10-14 is standard for web apps.
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	var keyed_password = password + password_secret_key
+	bytes, err := bcrypt.GenerateFromPassword([]byte(keyed_password), 10)
 	if err != nil {
 		gologs.Error.Println("Failed to hash password:", err)
 		return ""
@@ -238,9 +236,9 @@ func HashPassword(password string) string {
 }
 
 func CheckPassword(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	var keyed_password = password + password_secret_key
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(keyed_password))
 	if err != nil {
-		// This is expected if the password is wrong, so we log as Warning or Info, not Error
 		gologs.Warning.Println("Password verification failed:", err)
 		return false
 	}

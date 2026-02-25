@@ -68,7 +68,6 @@ function ForgotPassword() {
 }
 
 function auth(authtype = "none", recaptcha = 0, _email, _password) {
-    console.log(_email, _password);
     fetch("http://localhost:8080/auth", {
         method: "POST",
         headers: {
@@ -139,3 +138,31 @@ function signInWithGoogle() {
         } catch (_) { }
     }, 500);
 };
+
+
+async function refreshJWT() {
+  try {
+    const response = await fetch('http://localhost:8080/auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-authtype': 'refreshJWT',
+        "g-recaptcha-response": recaptcha
+      },
+      credentials: 'include',
+      body: JSON.stringify({})
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Refresh failed:', data);
+      return { success: false, error: data.error || 'Refresh request failed' };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error('Network error during token refresh:', err);
+    return { success: false, error: 'Network error' };
+  }
+}

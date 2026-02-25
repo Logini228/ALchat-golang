@@ -7,6 +7,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var Debug bool = true
+
 func Init() {
 	gologs.Init()
 	gologs.Info.Println("gocode library loaded")
@@ -14,6 +16,7 @@ func Init() {
 	LoadEnv()
 	DBconnect()
 	ModelsOpenRouter()
+
 }
 
 func LoadEnv() {
