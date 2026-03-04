@@ -181,13 +181,13 @@ func Auth(c *gin.Context) {
 	case "reset":
 
 	case "loginJWT":
-		longToken, err := c.Cookie("longJWT") // ← use cookie name here
+		longToken, err := c.Cookie("longJWT")
 		if err != nil || longToken == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
 			return
 		}
 
-		valid, uuid, email := ParseJWT(longToken)
+		valid, uuid, email := ParseJWT(longToken, true)
 		if !valid || uuid == "" || email == "" {
 			gologs.Warning.Println("loginJWT: invalid or expired long token")
 			c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
@@ -198,22 +198,29 @@ func Auth(c *gin.Context) {
 		c.SetCookie(
 			"shortJWT",
 			shortToken,
-			tenYears, // 30 minutes in seconds
+			tenYears,
 			"/",
 			"",
 			!Debug, // secure only in prod
 			true,   // httpOnly
 		)
-		c.JSON(http.StatusOK, gin.H{"status": "token success"})
+
+		name, avatar := QueryUser(uuid)
+		c.JSON(http.StatusOK,
+			gin.H{
+				"status": "token success",
+				"name":   name,
+				"avatar": avatar,
+			})
 
 	case "refreshJWT":
-		longToken, err := c.Cookie("longJWT") // ← use cookie name here
+		longToken, err := c.Cookie("longJWT")
 		if err != nil || longToken == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
 			return
 		}
 
-		valid, uuid, email := ParseJWT(longToken)
+		valid, uuid, email := ParseJWT(longToken, false)
 		if !valid || uuid == "" || email == "" {
 			gologs.Warning.Println("refreshJWT: invalid or expired long token")
 			c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
@@ -224,7 +231,7 @@ func Auth(c *gin.Context) {
 		c.SetCookie(
 			"shortJWT",
 			shortToken,
-			tenYears, // 30 minutes in seconds
+			tenYears,
 			"/",
 			"",
 			!Debug, // secure only in prod

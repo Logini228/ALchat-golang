@@ -38,7 +38,7 @@ function validate() {
 // Traditional form login
 //document.getElementById('loginForm').addEventListener('submit', function (e) {
 //    e.preventDefault();
-    // Get the values, not the elements
+// Get the values, not the elements
 //    const email = document.getElementById('email').value;
 //    const password = document.getElementById('password').value;
 //
@@ -139,30 +139,64 @@ function signInWithGoogle() {
     }, 500);
 };
 
+async function loginJWT() {
+    try {
+        const response = await fetch('http://localhost:8080/auth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-authtype': 'loginJWT',
+                "g-recaptcha-response": recaptcha
+            },
+            credentials: 'include',
+            body: JSON.stringify({})
+        });
+
+        if (!response.ok) {
+            infoToast("looks like you're new here. For now only google auth works");
+            return false
+        }
+
+        const data = await response.json();
+        console.log('Auth success:', data.status);
+
+        // Update UI with user data
+        document.getElementById('google-auth').hidden = true;
+        document.getElementById('username').textContent = data.name;
+        if (data.avatar) {
+            document.getElementById('avatar').src = data.avatar;
+        }
+
+        return true;
+    } catch (err) {
+        warnToast('Network error, try reloading the page:', err);
+        return false
+    }
+}
 
 async function refreshJWT() {
-  try {
-    const response = await fetch('http://localhost:8080/auth', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-authtype': 'refreshJWT',
-        "g-recaptcha-response": recaptcha
-      },
-      credentials: 'include',
-      body: JSON.stringify({})
-    });
+    try {
+        const response = await fetch('http://localhost:8080/auth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-authtype': 'refreshJWT',
+                "g-recaptcha-response": recaptcha
+            },
+            credentials: 'include',
+            body: JSON.stringify({})
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (!response.ok) {
-      console.error('Refresh failed:', data);
-      return { success: false, error: data.error || 'Refresh request failed' };
+        if (!response.ok) {
+            console.error('Refresh failed:', data);
+            return { success: false, error: data.error || 'Refresh request failed' };
+        }
+
+        return { success: true, data };
+    } catch (err) {
+        console.error('Network error during token refresh:', err);
+        return { success: false, error: 'Network error' };
     }
-
-    return { success: true, data };
-  } catch (err) {
-    console.error('Network error during token refresh:', err);
-    return { success: false, error: 'Network error' };
-  }
 }

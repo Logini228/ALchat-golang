@@ -116,6 +116,24 @@ function test() {
   console.log("test triggered")
 }
 
+function infoToast(message) {
+  const toast = Object.assign(document.createElement('sl-alert'), {
+    variant: 'primary',
+    duration: 3000,
+    closable: true,
+    innerHTML: `
+            <sl-icon slot="icon" name="check-circle"></sl-icon>
+            <strong>Success</strong><br>
+            ${message}        `
+  });
+
+  document.body.append(toast);
+  toast.toast();
+
+  // Clean up after it's hidden
+  toast.addEventListener('sl-after-hide', () => toast.remove());
+}
+
 function successToast(message) {
   const toast = Object.assign(document.createElement('sl-alert'), {
     variant: 'success',

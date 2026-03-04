@@ -33,6 +33,9 @@ func CloseDB() {
 }
 
 func InsertChatData(chatid string, sender string, message string) {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+	}
 	if chatid == "0" {
 		return
 	}
@@ -56,6 +59,9 @@ func InsertChatData(chatid string, sender string, message string) {
 }
 
 func QueryChatData(chatid string) ([]string, error) {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+	}
 	rows, err := db.Query("SELECT message FROM chat WHERE chatid=$1;", chatid)
 	if err != nil {
 		return nil, err
@@ -78,6 +84,7 @@ func QueryChatData(chatid string) ([]string, error) {
 func LoginWithDB(email string, password string) string {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
+		return ""
 	}
 
 	sqlStatement := `
@@ -104,6 +111,7 @@ func LoginWithDB(email string, password string) string {
 func GoogleToDB(user *GoogleUser) (string, string) {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
+		return "", ""
 	}
 	var uuid string
 	err := db.QueryRow(`
@@ -130,6 +138,7 @@ func GoogleToDB(user *GoogleUser) (string, string) {
 func RegisterWithDB(email string, password string) bool {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
+		return false
 	}
 	sqlStatementCheck := `
     SELECT uuid FROM users
@@ -187,6 +196,32 @@ func InsertJTI(jti string, uuid string) {
 	} else if rowsAffected == 0 {
 		gologs.Warning.Printf("couldn't insert jti to user with uuid: %s", uuid)
 	}
+}
+
+func VerifyJTI(jti string, uuid string) bool {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+		return false
+	}
+
+	// Check if the JTI exists in the user's jti_array column
+	// Returns true if found, false if not
+	sqlStatement := `
+		SELECT EXISTS(
+			SELECT 1 
+			FROM users 
+			WHERE uuid = $1 
+			AND $2 = ANY(jti_array) 
+		)`
+
+	var verified bool
+	err := db.QueryRow(sqlStatement, uuid, jti).Scan(&verified)
+	if err != nil {
+		gologs.Warning.Println("JTI verification failed:", err)
+		return false
+	}
+
+	return verified
 }
 
 func InsertModelEntry(entry ModelEntry) {
@@ -270,19 +305,29 @@ func QueryModels(query string) ([]ModelEntry, error) {
 func QueryUser(uuid string) (string, string) {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
+		return "", ""
 	}
 
 	sqlStatement := `
-    	SELECT name, avatar
+		SELECT 
+			COALESCE(name, ''), 
+			COALESCE(avatar, ''), 
+			email
 		FROM users
 		WHERE uuid = $1`
 
 	var name string
 	var avatar string
-	err := db.QueryRow(sqlStatement, uuid).Scan(&name, &avatar)
+	var email string
+
+	err := db.QueryRow(sqlStatement, uuid).Scan(&name, &avatar, &email)
 	if err != nil {
 		gologs.Warning.Println("Query user failed:", err)
 		return "", ""
+	}
+
+	if name == "" {
+		return email, avatar
 	}
 	return name, avatar
 }

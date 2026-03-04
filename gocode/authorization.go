@@ -58,7 +58,7 @@ func CreateJWT(uuid string, email string, long bool) string {
 	return signedToken
 }
 
-func ParseJWT(tokenString string) (bool, string, string) {
+func ParseJWT(tokenString string, verifyJTI bool) (bool, string, string) {
 	// Parse the token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Validate the signing method
@@ -88,6 +88,18 @@ func ParseJWT(tokenString string) (bool, string, string) {
 		if !emailOk {
 			gologs.Error.Println("JWT Token valid but missing email claim")
 			return false, "", ""
+		}
+
+		jti, jtiOk := claims["jti"].(string)
+		if !jtiOk {
+			gologs.Error.Println("JWT Token valid but missing jti claim")
+			return false, "", ""
+		}
+
+		if verifyJTI {
+			if VerifyJTI(jti, uuid) {
+				return true, uuid, email
+			}
 		}
 
 		return true, uuid, email
