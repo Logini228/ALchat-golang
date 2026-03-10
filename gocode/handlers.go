@@ -95,7 +95,8 @@ func Auth(c *gin.Context) {
 	authtype := c.GetHeader("X-authtype")
 
 	var loginReq LoginRequest
-	var email, password, recaptcha string
+	var email, password string
+	//var recaptcha string
 
 	if authtype == "login" || authtype == "register" {
 
@@ -108,11 +109,11 @@ func Auth(c *gin.Context) {
 		email = loginReq.Email
 		password = loginReq.Password
 
-		recaptcha = c.GetHeader("g-recaptcha-response")
+		//recaptcha = c.GetHeader("g-recaptcha-response")
+		//if !(VerifyRecaptcha(recaptcha)) {		}
 
-		if !(VerifyRecaptcha(recaptcha)) {
+		gologs.Info.Println("tried to auth")
 
-		}
 	}
 
 	switch authtype {
@@ -157,6 +158,7 @@ func Auth(c *gin.Context) {
 			uuid, email := GoogleToDB(user)
 			token := CreateJWT(uuid, email, true) // true for long
 
+			c.SetSameSite(http.SameSiteLaxMode) // Add this line
 			// Set the token as an httpOnly cookie
 			c.SetCookie(
 				"longJWT", // cookie name

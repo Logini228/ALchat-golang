@@ -47,15 +47,28 @@ func preShutdown() {
 }
 
 func CORSMiddleware() gin.HandlerFunc {
-	return gin.HandlerFunc(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-chatid, X-authtype, g-recaptcha-response")
-		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+	// Allowlist of trusted origins
+	allowedOrigins := map[string]bool{
+		"http://localhost:3000":  true,
+		"http://127.0.0.1:3000":  true,
+		"https://yourdomain.com": true, // Add production later
+	}
+
+	return func(c *gin.Context) {
+		origin := c.Request.Header.Get("Origin")
+
+		// Only set CORS headers if origin is in allowlist
+		if allowedOrigins[origin] {
+			c.Header("Access-Control-Allow-Origin", origin) // ✅ Echo exact origin
+			c.Header("Access-Control-Allow-Credentials", "true")
+			c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-chatid, X-authtype, g-recaptcha-response")
+			c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+		}
+
 		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 		c.Next()
-	})
+	}
 }

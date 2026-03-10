@@ -179,6 +179,10 @@ func InsertJTI(jti string, uuid string) {
 		return
 	}
 
+	if uuid == "" {
+		gologs.Error.Println("uuid is null")
+	}
+
 	sqlStatement := `
     	UPDATE users
 		SET jtis = array_append(jtis, $1)
@@ -204,14 +208,14 @@ func VerifyJTI(jti string, uuid string) bool {
 		return false
 	}
 
-	// Check if the JTI exists in the user's jti_array column
+	// Check if the JTI exists in the user's jtis column
 	// Returns true if found, false if not
 	sqlStatement := `
 		SELECT EXISTS(
 			SELECT 1 
 			FROM users 
 			WHERE uuid = $1 
-			AND $2 = ANY(jti_array) 
+			AND $2 = ANY(jtis) 
 		)`
 
 	var verified bool

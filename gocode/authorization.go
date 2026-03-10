@@ -146,11 +146,11 @@ func VerifyLoginGoogle(code string) (*GoogleUser, bool) {
 	form.Set("client_secret", os.Getenv("GOOGLE_CLIENT_SECRET"))
 	form.Set("grant_type", "authorization_code")
 	form.Set("code", code)
-	form.Set("redirect_uri", "http://localhost:3000")
+	form.Set("redirect_uri", "http://"+Domain+":3000")
 
 	resp, err := http.PostForm("https://oauth2.googleapis.com/token", form)
 	if err != nil || resp.StatusCode != 200 {
-		gologs.Error.Println("Something wrong with user's google code")
+		gologs.Error.Println("Something wrong with user's google code:", err)
 		return nil, false
 	}
 	defer resp.Body.Close()

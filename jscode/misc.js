@@ -122,8 +122,8 @@ function infoToast(message) {
     duration: 3000,
     closable: true,
     innerHTML: `
-            <sl-icon slot="icon" name="check-circle"></sl-icon>
-            <strong>Success</strong><br>
+            <sl-icon slot="icon" name="info-circle"></sl-icon>
+            <strong>Info</strong><br>
             ${message}        `
   });
 

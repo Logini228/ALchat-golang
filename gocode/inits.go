@@ -8,6 +8,7 @@ import (
 )
 
 var Debug bool = true
+var Domain string = "localhost"
 
 func Init() {
 	gologs.Init()

@@ -59,9 +59,11 @@
     </div>
 
     <div class="content-area">
-      <div class="header">
-            <sl-button variant="primary" size="medium" style="width: 100%; margin-bottom: 0.5rem;"
-                onclick="signInWithGoogle()" id="google-auth"><sl-icon name="google"></sl-icon></sl-button>
+      <div class="header" style="display:flex">
+        <sl-button variant="primary" size="medium" style=" width: 100%; margin-bottom: 0.1rem; "
+          onclick="signInWithGoogle()" id="google-auth"><sl-icon name="google"></sl-icon></sl-button>
+        <img styles="display:none" src="" id="avatar" referrerpolicy="no-referrer"></img>
+        <h2 styles="display:none" id="name"></h2>
       </div>
 
       <div class="inner-block">

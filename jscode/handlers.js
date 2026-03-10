@@ -15,3 +15,14 @@ function handleChat() {
 
     document.getElementById("llm-input").value = ""
 }
+function logged(data) {
+    document.getElementById('google-auth').style.display = 'none';
+
+    document.getElementById('name').style.display = 'content';
+    document.getElementById('name').textContent = data.name;
+
+    if (data.avatar) {
+        document.getElementById('avatar').style.display = 'content';
+        document.getElementById('avatar').src = data.avatar;
+    }
+}

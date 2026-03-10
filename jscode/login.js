@@ -90,7 +90,7 @@ function auth(authtype = "none", recaptcha = 0, _email, _password) {
             console.error('Error:', error);
             document.getElementById("datta").innerHTML = "Error: " + error;
         });
-    grecaptcha.reset();
+    //grecaptcha.reset();
 }
 
 function onSubmit(token) {
@@ -126,6 +126,7 @@ function signInWithGoogle() {
                 fetch('http://localhost:8080/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-authtype': 'google' },
+                    credentials: 'include',
                     body: JSON.stringify({ code })
                 }).then(r => r.json())
                     .then(d => {
@@ -146,7 +147,7 @@ async function loginJWT() {
             headers: {
                 'Content-Type': 'application/json',
                 'X-authtype': 'loginJWT',
-                "g-recaptcha-response": recaptcha
+                "g-recaptcha-response": 0
             },
             credentials: 'include',
             body: JSON.stringify({})
@@ -154,18 +155,13 @@ async function loginJWT() {
 
         if (!response.ok) {
             infoToast("looks like you're new here. For now only google auth works");
-            return false
+            return true
         }
 
         const data = await response.json();
         console.log('Auth success:', data.status);
 
-        // Update UI with user data
-        document.getElementById('google-auth').hidden = true;
-        document.getElementById('username').textContent = data.name;
-        if (data.avatar) {
-            document.getElementById('avatar').src = data.avatar;
-        }
+        logged(data)
 
         return true;
     } catch (err) {
@@ -180,8 +176,9 @@ async function refreshJWT() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                "Accept": "application/json",
                 'X-authtype': 'refreshJWT',
-                "g-recaptcha-response": recaptcha
+                "g-recaptcha-response": 0
             },
             credentials: 'include',
             body: JSON.stringify({})

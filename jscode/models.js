@@ -5,12 +5,13 @@ console.log("model.js loaded")
 
 window.onload = function() {
     requestModels();
+    //loginJWT()
 };
 
 function requestModels() {
     deleteModels();
 
-    fetch("http://localhost:8080/models", {
+    fetch("http://127.0.0.1:8080/models", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -92,3 +93,4 @@ function getSelectedModels() {
     
     return selectedModels;
 }
+

@@ -1,9 +1,14 @@
 -- schema.sql
 -- psql -h 127.0.0.1 -U postgresdb -d postgresdb -f schema.sql
 
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+
+GRANT ALL ON SCHEMA public TO postgresdb;
+GRANT ALL ON SCHEMA public TO public;
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Users table
 CREATE TABLE users (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
@@ -14,7 +19,6 @@ CREATE TABLE users (
     jtis TEXT[]
 );
 
--- Chat table
 CREATE TABLE chat (
     id SERIAL PRIMARY KEY,
     chatid TEXT NOT NULL,
@@ -22,7 +26,6 @@ CREATE TABLE chat (
     message TEXT NOT NULL
 );
 
--- Models table (your new table)
 CREATE TABLE models (
     aggregator TEXT NOT NULL,
     provider TEXT NOT NULL,
