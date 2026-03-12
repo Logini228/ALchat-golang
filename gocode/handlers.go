@@ -29,20 +29,26 @@ func CreateChat(c *gin.Context) {
 }
 
 func GetChatFromDB(c *gin.Context) {
-	// Read request
 	chatid := c.Param("chatid")
 
-	// Query the request
-	messages, err := QueryChatData(chatid)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		gologs.Error.Printf("error getting chat from db: %v", err)
+	shortToken, err := c.Cookie("shortJWT")
+	if err != nil || shortToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
 		return
 	}
 
+	valid, uuid, email := ParseJWT(shortToken, false)
+	if !valid || uuid == "" || email == "" {
+		gologs.Warning.Println("loginJWT: invalid or expired long token")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
+		return
+	}
+
+	messages, valid2 := QueryChatData(chatid, uuid)
+
 	gologs.Info.Println("Tried to access chat with id: ", chatid)
-	// Send the answer
-	c.JSON(200, messages)
+
+	c.JSON(200, gin.H{"messages": messages, "valid": valid2})
 }
 
 func AskLLM(c *gin.Context) {
@@ -259,7 +265,7 @@ func Auth(c *gin.Context) {
 		return
 	}
 
-	//gologs.Info.Println("auth triggered with authtype: " + authtype)
+	gologs.Info.Println("auth triggered with authtype: " + authtype)
 }
 
 func GetModelsFromDB(c *gin.Context) {

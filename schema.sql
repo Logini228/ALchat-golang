@@ -23,7 +23,15 @@ CREATE TABLE chat (
     id SERIAL PRIMARY KEY,
     chatid TEXT NOT NULL,
     sender TEXT NOT NULL,
-    message TEXT NOT NULL
+    message TEXT NOT NULL,
+    mess_uuid UUID UNIQUE DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE chat_members (
+    chatid TEXT NOT NULL,
+    user_uuid UUID REFERENCES users(uuid) ON DELETE CASCADE,
+    PRIMARY KEY (chatid, user_uuid)
 );
 
 CREATE TABLE models (

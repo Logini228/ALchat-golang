@@ -52,33 +52,61 @@ func InsertChatData(chatid string, sender string, message string) {
 	var id int
 	err := db.QueryRow(sqlStatement, chatid, sender, message).Scan(&id)
 	if err != nil {
-		gologs.Error.Println(err)
+		gologs.Error.Println("Error inserting into db: ", err)
 	}
 
 	gologs.Info.Println("New record ID:", id)
 }
 
-func QueryChatData(chatid string) ([]string, error) {
+type ChatMessage struct {
+	MessUUID string `json:"mess_uuid"`
+	Sender   string `json:"sender"`
+	Message  string `json:"message"`
+}
+
+func QueryChatData(chatid string, requestingUserUUID string) ([]ChatMessage, bool) {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
+		return nil, false
 	}
-	rows, err := db.Query("SELECT message FROM chat WHERE chatid=$1;", chatid)
+
+	var exists bool
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM chat_members WHERE chatid=$1 AND user_uuid=$2)",
+		chatid, requestingUserUUID).Scan(&exists)
+
+	if err != nil || !exists {
+		gologs.Error.Println("Unauthorized access attempt or error")
+		return nil, false
+	}
+
+	// 2. If authorized, get the messages
+	rows, err := db.Query("SELECT sender_name, message, mess_uuid FROM chat WHERE chatid=$1 ORDER BY id ASC;", chatid)
+	// ... rest of your loop
 	if err != nil {
-		return nil, err
+		gologs.Error.Println("Error retrieving chat id: ", chatid, " with error: ", err)
+		return nil, false
 	}
 	defer rows.Close()
 
-	var messages []string
+	var messages []ChatMessage
+
 	for rows.Next() {
-		var message string
-		err = rows.Scan(&message)
+		var m ChatMessage
+
+		err = rows.Scan(&m.Sender, &m.Message, &m.MessUUID)
 		if err != nil {
-			return nil, err
+			gologs.Error.Println("Scan error:", err)
+			return nil, false
 		}
-		messages = append(messages, message)
+
+		messages = append(messages, m)
 	}
 
-	return messages, rows.Err()
+	if err = rows.Err(); err != nil {
+		return nil, false
+	}
+
+	return messages, true
 }
 
 func LoginWithDB(email string, password string) string {
