@@ -2,7 +2,16 @@
 
 console.log("handlers.js loaded")
 
-function handleChat() {
+window.onload = function () {
+    requestModels();
+    loginJWT()
+};
+
+async function handleChat() {
+
+    if (!window.location.pathname.startsWith('/chat/')) {
+        await newChat()
+    }
 
     llmInput = document.getElementById("llm-input").value
     models = getSelectedModels()
@@ -26,3 +35,4 @@ function logged(data) {
         document.getElementById('avatar').src = data.avatar;
     }
 }
+

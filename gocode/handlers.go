@@ -3,6 +3,7 @@ package gocode
 import (
 	"encoding/json"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"sync"
 
@@ -15,6 +16,17 @@ import (
 var openrouter_api_key string
 
 const tenYears = 60 * 60 * 24 * 365 * 10 // 315,360,000 seconds
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func CreateChat(c *gin.Context) {
+	b := make([]byte, 16)
+	for i := range b {
+		b[i] = charset[rand.IntN(len(charset))]
+	}
+	var chatid = string(b)
+	gologs.Info.Println("created a chat with id: ", chatid)
+	c.JSON(200, gin.H{"id": chatid})
+}
 
 func GetChatFromDB(c *gin.Context) {
 	// Read request
@@ -28,6 +40,7 @@ func GetChatFromDB(c *gin.Context) {
 		return
 	}
 
+	gologs.Info.Println("Tried to access chat with id: ", chatid)
 	// Send the answer
 	c.JSON(200, messages)
 }
@@ -246,7 +259,7 @@ func Auth(c *gin.Context) {
 		return
 	}
 
-	gologs.Info.Println("auth triggered with authtype: " + authtype)
+	//gologs.Info.Println("auth triggered with authtype: " + authtype)
 }
 
 func GetModelsFromDB(c *gin.Context) {

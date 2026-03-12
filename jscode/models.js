@@ -3,10 +3,7 @@ var modelbox = document.querySelector('.models-input');
 
 console.log("model.js loaded")
 
-window.onload = function() {
-    requestModels();
-    //loginJWT()
-};
+
 
 function requestModels() {
     deleteModels();

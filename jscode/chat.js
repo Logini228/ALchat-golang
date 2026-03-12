@@ -96,6 +96,15 @@ window.addEventListener('load', () => {
     }
 });
 
+async function newChat() {
+    const response = await fetch('http://localhost:8080/newchat', { method: 'POST' });
+    const data = await response.json();
+
+    chatid = data.id;
+
+    window.history.pushState({}, "", `/chat/${data.id}`);
+}
+
 function stylizeJson(text) {
     if (typeof text !== 'string') {
         text = String(text);
