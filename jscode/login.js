@@ -84,6 +84,7 @@ function auth(authtype = "none", recaptcha = 0, _email, _password) {
             const parsed = typeof d === 'string' ? JSON.parse(d) : d;
             if (parsed.status === "Login success") {
                 LoginSuccessToast();
+                loginJWT()
             }
         })
         .catch(error => {
@@ -133,6 +134,7 @@ function signInWithGoogle() {
                         const parsed = typeof d === 'string' ? JSON.parse(d) : d;
                         if (parsed.status === "Login success") {
                             successToast("login success");
+                            loginJWT();
                         }
                     });
             }

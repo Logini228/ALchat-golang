@@ -363,3 +363,44 @@ func QueryUser(uuid string) (string, string) {
 	}
 	return name, avatar
 }
+
+type ChatSummary struct {
+	ChatID   string `json:"chat_id"`
+	ChatName string `json:"chat_name"`
+}
+
+func GetUserChatList(userUUID string) ([]ChatSummary, bool) {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+		return nil, false
+	}
+
+	// We use LEFT JOIN in case a chat was created but has no messages yet
+	query := `
+        SELECT s.chatid, s.chatname
+        FROM chat_members m
+        JOIN chat_sessions s ON m.chatid = s.chatid
+        LEFT JOIN chat c ON s.chatid = c.chatid
+        WHERE m.user_uuid = $1
+        GROUP BY s.chatid, s.chatname
+        ORDER BY MAX(c.created_at) DESC NULLS LAST;`
+
+	rows, err := db.Query(query, userUUID)
+	if err != nil {
+		gologs.Error.Println("database connection is nil")
+		return nil, false
+	}
+	defer rows.Close()
+
+	var chatList []ChatSummary
+	for rows.Next() {
+		var cs ChatSummary
+		if err := rows.Scan(&cs.ChatID, &cs.ChatName); err != nil {
+			gologs.Error.Println("Error getting chatlist: ", err)
+			return nil, false
+		}
+		chatList = append(chatList, cs)
+	}
+
+	return chatList, true
+}
