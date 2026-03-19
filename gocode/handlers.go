@@ -286,3 +286,25 @@ func GetModelsFromDB(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, models)
 }
+
+func GetChatList(c *gin.Context) {
+	shortToken, err := c.Cookie("shortJWT")
+	if err != nil || shortToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
+		return
+	}
+
+	valid, uuid, email := ParseJWT(shortToken, false)
+	if !valid || uuid == "" || email == "" {
+		gologs.Warning.Println("refreshJWT: invalid or expired long token")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
+		return
+	}
+
+	chatlist, valid1 := QueryUserChatList(uuid)
+	if !valid1 || chatlist == nil {
+		gologs.Warning.Println("either a new user or error getting chatlist")
+	}
+
+	c.JSON(http.StatusOK, gin.H{"chatlist": chatlist})
+}

@@ -17,6 +17,7 @@ func main() {
 	router.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
 	router.GET("/chat/:chatid", gocode.GetChatFromDB)
 	router.POST("/newchat", gocode.CreateChat)
+	router.POST("/chatlist", gocode.GetChatList)
 	router.POST("/chat", gocode.AskLLM)
 	router.POST("/auth", gocode.Auth)
 	router.POST("/models", gocode.GetModelsFromDB)

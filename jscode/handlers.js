@@ -4,7 +4,9 @@ console.log("handlers.js loaded")
 
 window.onload = function () {
     requestModels();
-    loginJWT()
+    if (loginJWT()) {
+        loadChatList()
+    }
 };
 
 async function handleChat() {

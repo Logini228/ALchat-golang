@@ -75,6 +75,30 @@ async function requestLLM(models, message) {
     }
 }
 
+async function loadChatList() {
+    try {
+        const response = await fetch('http://localhost:8080/chatlist', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-authtype': 'loginJWT',
+                "g-recaptcha-response": 0
+            },
+            credentials: 'include',
+            body: JSON.stringify({})
+        });
+
+        const data = await response.json();
+        console.log("chats: ", data.chatlist);
+
+
+        return true;
+    } catch (err) {
+        warnToast('Error getting chatlist:', err);
+        return false
+    }
+}
+
 function loadChat() {
     fetch(`http://localhost:8080/chat/${chatid}`)
         .then(response => response.json())

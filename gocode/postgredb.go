@@ -369,13 +369,12 @@ type ChatSummary struct {
 	ChatName string `json:"chat_name"`
 }
 
-func GetUserChatList(userUUID string) ([]ChatSummary, bool) {
+func QueryUserChatList(userUUID string) ([]ChatSummary, bool) {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
 		return nil, false
 	}
 
-	// We use LEFT JOIN in case a chat was created but has no messages yet
 	query := `
         SELECT s.chatid, s.chatname
         FROM chat_members m
@@ -387,7 +386,7 @@ func GetUserChatList(userUUID string) ([]ChatSummary, bool) {
 
 	rows, err := db.Query(query, userUUID)
 	if err != nil {
-		gologs.Error.Println("database connection is nil")
+		gologs.Error.Println("got error when querying chatlist: ", err)
 		return nil, false
 	}
 	defer rows.Close()
