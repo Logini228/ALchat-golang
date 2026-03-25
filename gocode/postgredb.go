@@ -80,7 +80,7 @@ func QueryChatData(chatid string, requestingUserUUID string) ([]ChatMessage, boo
 	}
 
 	// 2. If authorized, get the messages
-	rows, err := db.Query("SELECT sender_name, message, mess_uuid FROM chat WHERE chatid=$1 ORDER BY id ASC;", chatid)
+	rows, err := db.Query("SELECT sender_name, message, mess_uuid FROM message WHERE chatid=$1 ORDER BY id ASC;", chatid)
 	// ... rest of your loop
 	if err != nil {
 		gologs.Error.Println("Error retrieving chat id: ", chatid, " with error: ", err)
@@ -369,22 +369,20 @@ type ChatSummary struct {
 	ChatName string `json:"chat_name"`
 }
 
-func QueryUserChatList(userUUID string) ([]ChatSummary, bool) {
+func QueryUserChatList(uuid string) ([]ChatSummary, bool) {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
 		return nil, false
 	}
 
-	query := `
-        SELECT s.chatid, s.chatname
-        FROM chat_members m
-        JOIN chat_sessions s ON m.chatid = s.chatid
-        LEFT JOIN chat c ON s.chatid = c.chatid
-        WHERE m.user_uuid = $1
-        GROUP BY s.chatid, s.chatname
-        ORDER BY MAX(c.created_at) DESC NULLS LAST;`
+	sqlStatement := `
+    SELECT c.chatid, c.chatname
+	FROM chat c
+	JOIN chat_members m ON m.chatid = c.chatid
+	WHERE m.uuid = $1
+	ORDER BY c.created_at DESC;`
 
-	rows, err := db.Query(query, userUUID)
+	rows, err := db.Query(sqlStatement, uuid)
 	if err != nil {
 		gologs.Error.Println("got error when querying chatlist: ", err)
 		return nil, false
@@ -401,5 +399,44 @@ func QueryUserChatList(userUUID string) ([]ChatSummary, bool) {
 		chatList = append(chatList, cs)
 	}
 
+	if err := rows.Err(); err != nil {
+		gologs.Error.Println("Error during row iteration: ", err)
+		return nil, false
+	}
+
 	return chatList, true
+}
+
+func CreateChatDB(uuid string, chatid string) bool {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+		return false
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		gologs.Error.Println("could not start transaction:", err)
+		return false
+	}
+
+	_, err = tx.Exec(`INSERT INTO chat (chatid) VALUES ($1)`, chatid)
+	if err != nil {
+		tx.Rollback() // Cancel everything if this fails
+		gologs.Error.Println("error inserting into chat:", err)
+		return false
+	}
+
+	_, err = tx.Exec(`INSERT INTO chat_members (uuid, chatid) VALUES ($1, $2)`, uuid, chatid)
+	if err != nil {
+		tx.Rollback()
+		gologs.Error.Println("error inserting into chat_members:", err)
+		return false
+	}
+
+	if err := tx.Commit(); err != nil {
+		gologs.Error.Println("could not commit transaction:", err)
+		return false
+	}
+
+	return true
 }

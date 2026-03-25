@@ -19,13 +19,29 @@ const tenYears = 60 * 60 * 24 * 365 * 10 // 315,360,000 seconds
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func CreateChat(c *gin.Context) {
+	shortToken, err := c.Cookie("shortJWT")
+	if err != nil || shortToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
+		return
+	}
+
+	valid, uuid, email := ParseJWT(shortToken, false)
+	if !valid || uuid == "" || email == "" {
+		gologs.Warning.Println("refreshJWT: invalid or expired long token")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
+		return
+	}
+
 	b := make([]byte, 16)
 	for i := range b {
 		b[i] = charset[rand.IntN(len(charset))]
 	}
 	var chatid = string(b)
 	gologs.Info.Println("created a chat with id: ", chatid)
-	c.JSON(200, gin.H{"id": chatid})
+
+	CreateChatDB(uuid, chatid)
+
+	c.JSON(200, gin.H{"chatid": chatid})
 }
 
 func GetChatFromDB(c *gin.Context) {

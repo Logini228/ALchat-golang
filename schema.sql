@@ -19,26 +19,31 @@ CREATE TABLE users (
     jtis TEXT[]
 );
 
-CREATE TABLE chat_sessions (
-    chatid TEXT PRIMARY KEY,       -- The unique ID for the whole conversation
-    chatname TEXT NOT NULL,        -- Change the name here, and it updates for everyone
+CREATE TABLE chat (
+    chatid TEXT PRIMARY KEY,
+    chatname TEXT DEFAULT 'chat',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE chat_members (
-    chatid TEXT REFERENCES chat_sessions(chatid) ON DELETE CASCADE,
-    user_uuid UUID REFERENCES users(uuid) ON DELETE CASCADE,
-    PRIMARY KEY (chatid, user_uuid)
+    PRIMARY KEY (uuid, chatid),
+    uuid UUID NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+    chatid TEXT NOT NULL REFERENCES chat(chatid) ON DELETE CASCADE,
+    owner BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE chat (
-    id SERIAL PRIMARY KEY,         -- Internal ID for ordering
-    chatid TEXT REFERENCES chat_sessions(chatid) ON DELETE CASCADE,
-    sender TEXT NOT NULL,          
+CREATE INDEX idx_members_user_uuid ON chat_members(uuid);
+
+CREATE TABLE message (
+    id SERIAL PRIMARY KEY,
+    chatid TEXT NOT NULL REFERENCES chat(chatid) ON DELETE CASCADE,
+    sender TEXT NOT NULL,
     message TEXT NOT NULL,
     mess_uuid UUID UNIQUE DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX idx_message_chatid ON message(chatid);
 
 CREATE TABLE models (
     aggregator TEXT NOT NULL,
