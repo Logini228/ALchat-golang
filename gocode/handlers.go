@@ -21,13 +21,14 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 func CreateChat(c *gin.Context) {
 	shortToken, err := c.Cookie("shortJWT")
 	if err != nil || shortToken == "" {
+		gologs.Warning.Println("invalid short token", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
 		return
 	}
 
 	valid, uuid, email := ParseJWT(shortToken, false)
 	if !valid || uuid == "" || email == "" {
-		gologs.Warning.Println("refreshJWT: invalid or expired long token")
+		gologs.Warning.Println("invalid or expired short token", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
 		return
 	}

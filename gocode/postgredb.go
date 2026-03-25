@@ -45,7 +45,7 @@ func InsertChatData(chatid string, sender string, message string) {
 	}
 
 	sqlStatement := `
-        INSERT INTO chat (chatid, sender, message)
+        INSERT INTO message (chatid, sender, message)
         VALUES ($1, $2, $3)
         RETURNING id`
 

@@ -81,7 +81,6 @@ async function loadChatList() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-authtype': 'loginJWT',
                 "g-recaptcha-response": 0
             },
             credentials: 'include',
@@ -89,14 +88,31 @@ async function loadChatList() {
         });
 
         const data = await response.json();
-        console.log("chats: ", data.chatlist);
+        const nestedChats = data.chatlist.map(c => [c.chat_id, c.chat_name])
+        console.log("chats: ", nestedChats);
 
 
-        return true;
+        return nestedChats;
     } catch (err) {
         warnToast('Error getting chatlist:', err);
-        return false
+        return [[]]
     }
+}
+
+function renderChatList(data) {
+    const container = document.querySelector('.chat-list');
+    
+    // Clear existing items if necessary
+    container.innerHTML = '';
+
+    // data is [[id, name], [id, name]]
+    data.forEach(([id, name]) => {
+        const btn = document.createElement('sl-button');
+        btn.setAttribute('variant', 'default');
+        btn.id = id;
+        btn.textContent = name;
+        container.appendChild(btn);
+    });
 }
 
 function loadChat() {
@@ -121,12 +137,14 @@ window.addEventListener('load', () => {
 });
 
 async function newChat() {
-    const response = await fetch('http://localhost:8080/newchat', { method: 'POST' });
+    const response = await fetch('http://localhost:8080/newchat', { method: 'POST' , credentials:"include"});
     const data = await response.json();
 
-    chatid = data.id;
+    chatid = data.chatid;
 
-    window.history.pushState({}, "", `/chat/${data.id}`);
+    if (chatid != undefined) {
+        window.history.pushState({}, "", `/chat/${chatid}`);
+    }
 }
 
 function stylizeJson(text) {

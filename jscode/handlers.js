@@ -2,10 +2,11 @@
 
 console.log("handlers.js loaded")
 
-window.onload = function () {
+window.onload = async function () {
     requestModels();
     if (loginJWT()) {
-        loadChatList()
+        const chats = await loadChatList(); 
+        renderChatList(chats);
     }
 };
 
