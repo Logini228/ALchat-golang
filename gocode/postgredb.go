@@ -64,45 +64,32 @@ type ChatMessage struct {
 	Message  string `json:"message"`
 }
 
-func QueryChatData(chatid string, requestingUserUUID string) ([]ChatMessage, bool) {
+func QueryChatMessages(chatid string) ([]ChatMessage, bool) {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
 		return nil, false
 	}
 
-	var exists bool
-	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM chat_members WHERE chatid=$1 AND user_uuid=$2)",
-		chatid, requestingUserUUID).Scan(&exists)
-
-	if err != nil || !exists {
-		gologs.Error.Println("Unauthorized access attempt or error")
-		return nil, false
-	}
-
-	// 2. If authorized, get the messages
-	rows, err := db.Query("SELECT sender_name, message, mess_uuid FROM message WHERE chatid=$1 ORDER BY id ASC;", chatid)
-	// ... rest of your loop
+	rows, err := db.Query("SELECT sender, message, mess_uuid FROM message WHERE chatid=$1 ORDER BY id ASC;", chatid)
 	if err != nil {
-		gologs.Error.Println("Error retrieving chat id: ", chatid, " with error: ", err)
+		gologs.Error.Printf("Error retrieving chat id %s: %v", chatid, err)
 		return nil, false
 	}
 	defer rows.Close()
 
-	var messages []ChatMessage
+	messages := []ChatMessage{}
 
 	for rows.Next() {
 		var m ChatMessage
-
-		err = rows.Scan(&m.Sender, &m.Message, &m.MessUUID)
-		if err != nil {
+		if err := rows.Scan(&m.Sender, &m.Message, &m.MessUUID); err != nil {
 			gologs.Error.Println("Scan error:", err)
 			return nil, false
 		}
-
 		messages = append(messages, m)
 	}
 
-	if err = rows.Err(); err != nil {
+	if err := rows.Err(); err != nil {
+		gologs.Error.Println("Rows iteration error:", err)
 		return nil, false
 	}
 
@@ -439,4 +426,29 @@ func CreateChatDB(uuid string, chatid string) bool {
 	}
 
 	return true
+}
+
+func CanAccessChat(uuid string, chatid string) bool {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+		return false
+	}
+
+	sqlStatement := `
+		SELECT EXISTS (
+			SELECT FROM chat_members
+		WHERE
+			uuid = $1
+		AND
+			chatid = $2
+		)`
+
+	var verified bool
+	err := db.QueryRow(sqlStatement, uuid, chatid).Scan(&verified)
+	if err != nil {
+		gologs.Warning.Println("user to chat verification failed:", err)
+		return false
+	}
+
+	return verified
 }

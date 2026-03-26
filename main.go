@@ -15,7 +15,7 @@ func main() {
 	router.Use(CORSMiddleware())
 
 	router.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
-	router.GET("/chat/:chatid", gocode.GetChatFromDB)
+	router.GET("/chat/:chatid", gocode.GetMessagesForChat)
 	router.POST("/newchat", gocode.CreateChat)
 	router.POST("/chatlist", gocode.GetChatList)
 	router.POST("/chat", gocode.AskLLM)

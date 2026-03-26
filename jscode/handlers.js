@@ -39,3 +39,8 @@ function logged(data) {
     }
 }
 
+function handleChatlistClick(id) {
+    moveUserTo(id)
+    loadChat(id)
+    return true
+}

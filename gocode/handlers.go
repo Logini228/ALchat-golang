@@ -45,7 +45,7 @@ func CreateChat(c *gin.Context) {
 	c.JSON(200, gin.H{"chatid": chatid})
 }
 
-func GetChatFromDB(c *gin.Context) {
+func GetMessagesForChat(c *gin.Context) {
 	chatid := c.Param("chatid")
 
 	shortToken, err := c.Cookie("shortJWT")
@@ -61,7 +61,13 @@ func GetChatFromDB(c *gin.Context) {
 		return
 	}
 
-	messages, valid2 := QueryChatData(chatid, uuid)
+	if !CanAccessChat(uuid, chatid) {
+		gologs.Warning.Println("user cant access chat or somethings wrong")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
+		return
+	}
+
+	messages, valid2 := QueryChatMessages(chatid)
 
 	gologs.Info.Println("Tried to access chat with id: ", chatid)
 

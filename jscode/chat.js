@@ -101,7 +101,7 @@ async function loadChatList() {
 
 function renderChatList(data) {
     const container = document.querySelector('.chat-list');
-    
+
     // Clear existing items if necessary
     container.innerHTML = '';
 
@@ -111,40 +111,61 @@ function renderChatList(data) {
         btn.setAttribute('variant', 'default');
         btn.id = id;
         btn.textContent = name;
+        btn.addEventListener('click', () => { handleChatlistClick(id); });
         container.appendChild(btn);
     });
 }
 
-function loadChat() {
-    fetch(`http://localhost:8080/chat/${chatid}`)
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(msgJSON => {
-                var msg = JSON.parse(msgJSON);
-                //console.log(msg.choices[0].message.content);
-                console.log(JSON.stringify(msg)); // Pretty print
-                addParsedBlock(msgJSON);
-            });
-        });
+function getChatIdFromURL() {
+    const match = window.location.pathname.match(/\/chat\/(\w+)/);
+    return match ? match[1] : null;
 }
 
+function loadChat(id) {
+    if (!id) return;
+
+    fetch(`http://localhost:8080/chat/${id}`, { credentials: 'include' })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Loading chat for ID:", id);
+
+            console.log("Raw data received from server:", data);
+
+            console.log("Type of data:", typeof data);
+
+            console.log("Is it an array?", Array.isArray(data));
+
+            data.forEach(msgJSON => {
+                // If your Go server sends raw JSON strings in the array:
+                // var msg = JSON.parse(msgJSON); 
+                addParsedBlock(msgJSON);
+            });
+        })
+        .catch(error => console.error("Fetch error:", error));
+}
+
+window.addEventListener('popstate', () => {
+    loadChat(getChatIdFromURL());
+});
+
 window.addEventListener('load', () => {
-    const match = location.pathname.match(/\/chat\/(\w+)/);
-    if (match) {
-        chatid = match[1];
-        loadChat()
-    }
+    loadChat(getChatIdFromURL());
 });
 
 async function newChat() {
-    const response = await fetch('http://localhost:8080/newchat', { method: 'POST' , credentials:"include"});
+    const response = await fetch('http://localhost:8080/newchat', { method: 'POST', credentials: "include" });
     const data = await response.json();
 
     chatid = data.chatid;
 
     if (chatid != undefined) {
-        window.history.pushState({}, "", `/chat/${chatid}`);
+        moveUserTo(chatid)
     }
+}
+
+function moveUserTo(chatid) {
+    window.history.pushState({}, "", `/chat/${chatid}`);
+    return true;
 }
 
 function stylizeJson(text) {
