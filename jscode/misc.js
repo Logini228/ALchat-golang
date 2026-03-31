@@ -12,68 +12,6 @@ const autoResize = () => {
 textarea.addEventListener('input', autoResize);
 autoResize();
 
-
-function addQuestionBox(s) {
-  const innerBlock = document.querySelector('.inner-block');
-  const newDiv = document.createElement('div');
-  newDiv.className = 'question-box';
-  newDiv.innerHTML = '<p>' + s + '</p>';
-  innerBlock.appendChild(newDiv);
-}
-
-// Function to create sl-details elements from an array of strings
-function createAnswers(a) {
-  const innerBlock = document.querySelector('.inner-block');
-
-  const newDiv = document.createElement('div');
-  newDiv.className = 'answer-container';
-  newDiv.style.width = 'stretch';
-  newDiv.setAttribute('st', '');
-
-  const detailsGroupDiv = document.createElement('div');
-  detailsGroupDiv.className = 'details-group';
-
-  a.forEach(str => {
-    const detailsElement = document.createElement('sl-details');
-    detailsElement.disabled = true;
-
-    const summaryDiv = document.createElement('div');
-    summaryDiv.setAttribute('slot', 'summary');
-    summaryDiv.textContent = str;
-
-    detailsElement.appendChild(summaryDiv);
-    detailsGroupDiv.appendChild(detailsElement);
-  });
-
-  newDiv.appendChild(detailsGroupDiv);
-  innerBlock.appendChild(newDiv);
-
-  // Add the event listener to the newly created details-group
-  addDetailsEventListener(detailsGroupDiv);
-}
-
-// Function to fill the latest sl-details with a specific summary and enable it
-function fillAnswers([s, ss]) {
-  const allDetails = document.querySelectorAll('sl-details');
-  let targetElement = null;
-
-  // Find the latest sl-details with the specified summary text
-  for (let i = allDetails.length - 1; i >= 0; i--) {
-    const summarySlot = allDetails[i].querySelector('[slot="summary"]');
-    if (summarySlot && summarySlot.textContent === s) {
-      targetElement = allDetails[i];
-      break;
-    }
-  }
-
-  if (targetElement) {
-    // Add the content inside the sl-details
-    targetElement.innerHTML += ss;
-    // Remove the disabled property
-    targetElement.disabled = false;
-  }
-}
-
 // Function to fill the latest sl-details with a specific summary and enable it
 function fillErrors([s, ss]) {
   const allDetails = document.querySelectorAll('sl-details');

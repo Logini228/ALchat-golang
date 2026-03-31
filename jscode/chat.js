@@ -1,6 +1,5 @@
 var textbox = document.getElementById('mytextbox');
 var modelbox = document.getElementById('modelbox');
-var chatid = "0";
 
 console.log("chat.js loaded")
 
@@ -11,7 +10,7 @@ async function requestLLM(models, message) {
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "X-chatid": chatid
+                "X-chatid": getChatIdFromURL()
             },
             body: JSON.stringify({
                 "model": models,
@@ -75,6 +74,73 @@ async function requestLLM(models, message) {
     }
 }
 
+function createQuestion(s) {
+    const innerBlock = document.querySelector('.inner-block');
+    const newDiv = document.createElement('div');
+    newDiv.className = 'question-box';
+    newDiv.innerHTML = '<p>' + s + '</p>';
+    innerBlock.appendChild(newDiv);
+}
+
+function createAnswers(a) {
+    const innerBlock = document.querySelector('.inner-block');
+
+    const newDiv = document.createElement('div');
+    newDiv.className = 'answer-container';
+    newDiv.style.width = 'stretch';
+    newDiv.setAttribute('st', '');
+
+    const detailsGroupDiv = document.createElement('div');
+    detailsGroupDiv.className = 'details-group';
+
+    a.forEach(str => {
+        const detailsElement = document.createElement('sl-details');
+        detailsElement.disabled = true;
+
+        const summaryDiv = document.createElement('div');
+        summaryDiv.setAttribute('slot', 'summary');
+        summaryDiv.textContent = str;
+
+        detailsElement.appendChild(summaryDiv);
+        detailsGroupDiv.appendChild(detailsElement);
+    });
+
+    newDiv.appendChild(detailsGroupDiv);
+    innerBlock.appendChild(newDiv);
+
+    addDetailsEventListener(detailsGroupDiv);
+}
+
+function clearChatContent() {
+    const innerBlock = document.querySelector('.inner-block');
+    if (innerBlock) {
+        innerBlock.innerHTML = '';
+    } else {
+        warnToast("Couldn't clear chat dialogue: Container .inner-block not found.");
+    }
+}
+
+function fillAnswers([s, ss]) {
+    const allDetails = document.querySelectorAll('sl-details');
+    let targetElement = null;
+
+    // Find the latest sl-details with the specified summary text
+    for (let i = allDetails.length - 1; i >= 0; i--) {
+        const summarySlot = allDetails[i].querySelector('[slot="summary"]');
+        if (summarySlot && summarySlot.textContent === s) {
+            targetElement = allDetails[i];
+            break;
+        }
+    }
+
+    if (targetElement) {
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = ss; // The message from the model
+        targetElement.appendChild(contentDiv);
+        targetElement.disabled = false;
+    }
+}
+
 async function loadChatList() {
     try {
         const response = await fetch('http://localhost:8080/chatlist', {
@@ -127,19 +193,33 @@ function loadChat(id) {
     fetch(`http://localhost:8080/chat/${id}`, { credentials: 'include' })
         .then(response => response.json())
         .then(data => {
-            console.log("Loading chat for ID:", id);
+            if (!data.valid || !Array.isArray(data.messages)) return;
 
-            console.log("Raw data received from server:", data);
+            const msgs = data.messages;
+            
+            for (let i = 0; i < msgs.length; i++) {
+                if (msgs[i].sender === 'user') {
+                    createQuestion(msgs[i].message);
 
-            console.log("Type of data:", typeof data);
+                    let modelMessages = [];
+                    let j = i + 1;
+                    
+                    while (j < msgs.length && msgs[j].sender !== 'user') {
+                        modelMessages.push(msgs[j]);
+                        j++;
+                    }
 
-            console.log("Is it an array?", Array.isArray(data));
+                    if (modelMessages.length > 0) {
+                        const modelNames = modelMessages.map(m => m.sender);
+                        createAnswers(modelNames);
+                        modelMessages.forEach(m => {
+                            fillAnswers([m.sender, stylizeJson(m.message)]);
+                        });
+                    }
 
-            data.forEach(msgJSON => {
-                // If your Go server sends raw JSON strings in the array:
-                // var msg = JSON.parse(msgJSON); 
-                addParsedBlock(msgJSON);
-            });
+                    i = j - 1;
+                }
+            }
         })
         .catch(error => console.error("Fetch error:", error));
 }

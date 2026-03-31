@@ -3,6 +3,7 @@
 console.log("handlers.js loaded")
 
 window.onload = async function () {
+    clearChatContent()
     requestModels();
     if (loginJWT()) {
         const chats = await loadChatList(); 
@@ -21,7 +22,7 @@ async function handleChat() {
     names = models.map(model => model.name);
     ids = models.map(model => model.id);
 
-    addQuestionBox(llmInput)
+    createQuestion(llmInput)
     createAnswers(ids)
     requestLLM(ids, llmInput)
 
@@ -40,6 +41,7 @@ function logged(data) {
 }
 
 function handleChatlistClick(id) {
+    clearChatContent()
     moveUserTo(id)
     loadChat(id)
     return true
