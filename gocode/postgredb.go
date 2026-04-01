@@ -32,30 +32,32 @@ func CloseDB() {
 	}
 }
 
-func InsertChatData(chatid string, sender string, message string) {
+func InsertChatData(chatid string, sender string, message string) string {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
 	}
 	if chatid == "0" {
-		return
+		return ""
 	}
 
 	if message == "" {
-		return
+		return ""
 	}
 
 	sqlStatement := `
         INSERT INTO message (chatid, sender, message)
         VALUES ($1, $2, $3)
-        RETURNING id`
+        RETURNING id, mess_uuid`
 
 	var id int
-	err := db.QueryRow(sqlStatement, chatid, sender, message).Scan(&id)
+	var mess_uuid string
+	err := db.QueryRow(sqlStatement, chatid, sender, message).Scan(&id, &mess_uuid)
 	if err != nil {
 		gologs.Error.Println("Error inserting into db: ", err)
 	}
 
 	gologs.Info.Println("New record ID:", id)
+	return mess_uuid
 }
 
 type ChatMessage struct {

@@ -103,24 +103,25 @@ func AskLLM(c *gin.Context) {
 		go func(m string) {
 			defer wg.Done() // Decrement when done
 
-			response, resModel, success := callOpenRouter(messages, m) // Pass m (string)
+			response, resModel := callOpenRouter(messages, m) // Pass m (string)
 			if response == "" {
 				gologs.Error.Println("something went wrong in AskLLM")
 				return
 			}
 
+			mess_uuid := InsertChatData(chatid, resModel, response)
+
 			// Send via NDJSON
 			responseObj := gin.H{
-				"model":    resModel,
-				"response": response,
-				"success":  success,
+				"model":     resModel,
+				"response":  response,
+				"mess_uuid": mess_uuid,
 			}
 			jsonData, _ := json.Marshal(responseObj)
 			c.Writer.Write(jsonData)
 			c.Writer.WriteString("\n")
 			c.Writer.Flush()
 
-			InsertChatData(chatid, resModel, response)
 		}(model.String()) // Convert gjson.Result to string!
 	}
 
@@ -311,7 +312,8 @@ func GetModelsFromDB(c *gin.Context) {
 }
 
 func GetChatList(c *gin.Context) {
-	shortToken, err := c.Cookie("shortJWT")
+	shortToken, err := c.Cookie("longJWT") // using long there instead of short
+	//because it would have to wait for short token on frontend
 	if err != nil || shortToken == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
 		return

@@ -42,15 +42,13 @@ async function requestLLM(models, message) {
                     try {
                         const data = JSON.parse(line);
                         const model = data.model;
-                        const success = data.success
+                        const mess_uuid = data.mess_uuid;
                         const responseText = data.response;
 
                         // Update UI with each chunk
-                        if (success) {
-                            fillAnswers([model, stylizeJson(responseText)]);
-                        } else {
-                            fillErrors([model, responseText])
-                        }
+                        
+                        fillAnswers([model, stylizeJson(responseText)], mess_uuid);
+
                     } catch (e) {
                         console.error('Failed to parse line:', line, e);
                     }
@@ -83,32 +81,38 @@ function createQuestion(s) {
 }
 
 function createAnswers(a) {
-    const innerBlock = document.querySelector('.inner-block');
+  const innerBlock = document.querySelector('.inner-block');
+  const newDiv = document.createElement('div');
+  newDiv.className = 'answer-container';
+  newDiv.style.width = 'stretch';
 
-    const newDiv = document.createElement('div');
-    newDiv.className = 'answer-container';
-    newDiv.style.width = 'stretch';
-    newDiv.setAttribute('st', '');
+  const detailsGroupDiv = document.createElement('div');
+  detailsGroupDiv.className = 'details-group';
 
-    const detailsGroupDiv = document.createElement('div');
-    detailsGroupDiv.className = 'details-group';
+  a.forEach(str => {
+    const detailsElement = document.createElement('sl-details');
+    detailsElement.disabled = true;
 
-    a.forEach(str => {
-        const detailsElement = document.createElement('sl-details');
-        detailsElement.disabled = true;
+    const summaryDiv = document.createElement('div');
+    summaryDiv.setAttribute('slot', 'summary');
+    // Flexbox to keep name left and toggle right
+    summaryDiv.style.display = 'flex';
+    summaryDiv.style.justifyContent = 'space-between';
+    summaryDiv.style.alignItems = 'center';
+    summaryDiv.style.width = '100%';
 
-        const summaryDiv = document.createElement('div');
-        summaryDiv.setAttribute('slot', 'summary');
-        summaryDiv.textContent = str;
+    summaryDiv.innerHTML = `
+      <span class="model-name">${str}</span>
+      <sl-switch class="answer-toggle" checked onclick="event.stopPropagation()"></sl-switch>
+    `;
 
-        detailsElement.appendChild(summaryDiv);
-        detailsGroupDiv.appendChild(detailsElement);
-    });
+    detailsElement.appendChild(summaryDiv);
+    detailsGroupDiv.appendChild(detailsElement);
+  });
 
-    newDiv.appendChild(detailsGroupDiv);
-    innerBlock.appendChild(newDiv);
-
-    addDetailsEventListener(detailsGroupDiv);
+  newDiv.appendChild(detailsGroupDiv);
+  innerBlock.appendChild(newDiv);
+  addDetailsEventListener(detailsGroupDiv);
 }
 
 function clearChatContent() {
@@ -120,25 +124,51 @@ function clearChatContent() {
     }
 }
 
-function fillAnswers([s, ss]) {
-    const allDetails = document.querySelectorAll('sl-details');
-    let targetElement = null;
+function fillAnswers([s, ss, id]) {
+  const allDetails = document.querySelectorAll('sl-details');
+  let targetElement = null;
 
-    // Find the latest sl-details with the specified summary text
-    for (let i = allDetails.length - 1; i >= 0; i--) {
-        const summarySlot = allDetails[i].querySelector('[slot="summary"]');
-        if (summarySlot && summarySlot.textContent === s) {
-            targetElement = allDetails[i];
-            break;
-        }
+  for (let i = allDetails.length - 1; i >= 0; i--) {
+    const summaryName = allDetails[i].querySelector('.model-name');
+    if (summaryName && summaryName.textContent === s) {
+      targetElement = allDetails[i];
+      break;
+    }
+  }
+
+  if (targetElement) {
+    // Apply the ID
+    targetElement.setAttribute('data-answer-id', id);
+
+    const toggle = targetElement.querySelector('.answer-toggle');
+    
+    if (ss == 'Provider returned error' || ss == "No endpoints available matching your guardrail restrictions and data policy. Configure: https://openrouter.ai/settings/privacy") {
+      const summaryName = targetElement.querySelector('.model-name');
+      summaryName.innerHTML += ' <sl-tag variant="danger" size="small">error</sl-tag>';
+      
+      // Turn toggle off for errors
+      if (toggle) toggle.checked = false;
     }
 
-    if (targetElement) {
-        const contentDiv = document.createElement('div');
-        contentDiv.innerHTML = ss; // The message from the model
-        targetElement.appendChild(contentDiv);
-        targetElement.disabled = false;
+    const contentWrapper = document.createElement('div');
+    contentWrapper.innerHTML = ss;
+    targetElement.appendChild(contentWrapper);
+    targetElement.disabled = false;
+  }
+}
+
+function getSelectedAnswerIds() {
+  const activeIds = [];
+  const allDetails = document.querySelectorAll('sl-details[data-answer-id]');
+
+  allDetails.forEach(el => {
+    const toggle = el.querySelector('.answer-toggle');
+    if (toggle && toggle.checked) {
+      activeIds.push(el.getAttribute('data-answer-id'));
     }
+  });
+
+  return activeIds;
 }
 
 async function loadChatList() {
@@ -213,7 +243,7 @@ function loadChat(id) {
                         const modelNames = modelMessages.map(m => m.sender);
                         createAnswers(modelNames);
                         modelMessages.forEach(m => {
-                            fillAnswers([m.sender, stylizeJson(m.message)]);
+                            fillAnswers([m.sender, stylizeJson(m.message), m.mess_uuid]);
                         });
                     }
 
