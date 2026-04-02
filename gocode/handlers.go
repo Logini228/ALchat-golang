@@ -75,6 +75,20 @@ func GetMessagesForChat(c *gin.Context) {
 }
 
 func AskLLM(c *gin.Context) {
+
+	shortToken, err := c.Cookie("shortJWT")
+	if err != nil || shortToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
+		return
+	}
+
+	valid, uuid, email := ParseJWT(shortToken, false)
+	if !valid || uuid == "" || email == "" {
+		gologs.Warning.Println("loginJWT: invalid or expired long token")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
+		return
+	}
+
 	bodyBytes, _ := io.ReadAll(c.Request.Body)
 	requestBody := string(bodyBytes)
 	chatid := c.GetHeader("X-chatid")
@@ -88,7 +102,7 @@ func AskLLM(c *gin.Context) {
 		messages = append(messages, msg.Value())
 	}
 
-	InsertChatData(chatid, "user", request)
+	InsertChatData(chatid, uuid, true, request)
 
 	// Set up NDJSON streaming headers
 	c.Header("Content-Type", "application/x-ndjson")
@@ -109,7 +123,7 @@ func AskLLM(c *gin.Context) {
 				return
 			}
 
-			mess_uuid := InsertChatData(chatid, resModel, response)
+			mess_uuid := InsertChatData(chatid, resModel, false, response)
 
 			// Send via NDJSON
 			responseObj := gin.H{

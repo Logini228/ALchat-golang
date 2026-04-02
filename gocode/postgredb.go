@@ -32,7 +32,7 @@ func CloseDB() {
 	}
 }
 
-func InsertChatData(chatid string, sender string, message string) string {
+func InsertChatData(chatid string, sender string, sender_user bool, message string) string {
 	if db == nil {
 		gologs.Error.Println("database connection is nil")
 	}
@@ -45,13 +45,13 @@ func InsertChatData(chatid string, sender string, message string) string {
 	}
 
 	sqlStatement := `
-        INSERT INTO message (chatid, sender, message)
-        VALUES ($1, $2, $3)
+        INSERT INTO message (chatid, sender, sender_user, message)
+        VALUES ($1, $2, $3, $4)
         RETURNING id, mess_uuid`
 
 	var id int
 	var mess_uuid string
-	err := db.QueryRow(sqlStatement, chatid, sender, message).Scan(&id, &mess_uuid)
+	err := db.QueryRow(sqlStatement, chatid, sender, sender_user, message).Scan(&id, &mess_uuid)
 	if err != nil {
 		gologs.Error.Println("Error inserting into db: ", err)
 	}
@@ -61,9 +61,10 @@ func InsertChatData(chatid string, sender string, message string) string {
 }
 
 type ChatMessage struct {
-	MessUUID string `json:"mess_uuid"`
-	Sender   string `json:"sender"`
-	Message  string `json:"message"`
+	MessUUID   string `json:"mess_uuid"`
+	Sender     string `json:"sender"`
+	SenderUser bool   `json:"sender_user"`
+	Message    string `json:"message"`
 }
 
 func QueryChatMessages(chatid string) ([]ChatMessage, bool) {
@@ -72,7 +73,7 @@ func QueryChatMessages(chatid string) ([]ChatMessage, bool) {
 		return nil, false
 	}
 
-	rows, err := db.Query("SELECT sender, message, mess_uuid FROM message WHERE chatid=$1 ORDER BY id ASC;", chatid)
+	rows, err := db.Query("SELECT sender, sender_user, message, mess_uuid FROM message WHERE chatid=$1 ORDER BY id ASC;", chatid)
 	if err != nil {
 		gologs.Error.Printf("Error retrieving chat id %s: %v", chatid, err)
 		return nil, false
@@ -83,7 +84,7 @@ func QueryChatMessages(chatid string) ([]ChatMessage, bool) {
 
 	for rows.Next() {
 		var m ChatMessage
-		if err := rows.Scan(&m.Sender, &m.Message, &m.MessUUID); err != nil {
+		if err := rows.Scan(&m.Sender, &m.SenderUser, &m.Message, &m.MessUUID); err != nil {
 			gologs.Error.Println("Scan error:", err)
 			return nil, false
 		}

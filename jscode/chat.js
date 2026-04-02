@@ -14,8 +14,10 @@ async function requestLLM(models, message) {
             },
             body: JSON.stringify({
                 "model": models,
-                "messages": [{ "role": "user", "content": message }]
-            })
+                "prompt": message,
+                "history": getSelectedAnswerIds()
+            }),
+            credentials:"include"
         });
 
         const reader = response.body.getReader();
@@ -228,13 +230,13 @@ function loadChat(id) {
             const msgs = data.messages;
             
             for (let i = 0; i < msgs.length; i++) {
-                if (msgs[i].sender === 'user') {
+                if (msgs[i].sender_user == true) {
                     createQuestion(msgs[i].message);
 
                     let modelMessages = [];
                     let j = i + 1;
                     
-                    while (j < msgs.length && msgs[j].sender !== 'user') {
+                    while (j < msgs.length && msgs[j].sender_user == true) {
                         modelMessages.push(msgs[j]);
                         j++;
                     }

@@ -75,8 +75,7 @@ function auth(authtype = "none", recaptcha = 0, _email, _password) {
             "Accept": "application/json",
             "X-authtype": authtype,
             "g-recaptcha-response": recaptcha
-        },
-
+        }, 
         body: JSON.stringify({ email: new String(_email), password: new String(_password) })
     })
         .then(r => r.text())

@@ -38,6 +38,7 @@ CREATE TABLE message (
     id SERIAL PRIMARY KEY,
     chatid TEXT NOT NULL REFERENCES chat(chatid) ON DELETE CASCADE,
     sender TEXT NOT NULL,
+    sender_user BOOLEAN NOT NULL,
     message TEXT NOT NULL,
     mess_uuid UUID UNIQUE DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT NOW()
