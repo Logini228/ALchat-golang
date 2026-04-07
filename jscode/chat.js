@@ -5,6 +5,9 @@ console.log("chat.js loaded")
 
 async function requestLLM(models, message) {
     try {
+        const history = getHistory();
+        const empty = (history.length === 0);
+
         const response = await fetch("http://localhost:8080/chat", {
             method: "POST",
             headers: {
@@ -15,7 +18,8 @@ async function requestLLM(models, message) {
             body: JSON.stringify({
                 "model": models,
                 "prompt": message,
-                "history": getSelectedAnswerIds()
+                "history": history,
+                "empty": empty
             }),
             credentials:"include"
         });
@@ -278,6 +282,36 @@ async function newChat() {
 function moveUserTo(chatid) {
     window.history.pushState({}, "", `/chat/${chatid}`);
     return true;
+}
+
+function getHistory() {
+    const history = [];
+    const innerBlock = document.querySelector('.inner-block');
+    
+    if (!innerBlock) return history;
+
+    const elements = innerBlock.children;
+
+    for (let el of elements) {
+        if (el.classList.contains('question-box')) {
+            const promptText = el.querySelector('p')?.innerText || "";
+            history.push([false, promptText]);
+        } 
+        
+        else if (el.classList.contains('answer-container')) {
+            const allDetails = el.querySelectorAll('sl-details[data-answer-id]');
+            
+            allDetails.forEach(detail => {
+                const toggle = detail.querySelector('.answer-toggle');
+                const answerId = detail.getAttribute('data-answer-id');
+                
+                if (toggle && toggle.checked && answerId) {
+                    history.push([true, answerId]);
+                }
+            });
+        }
+    }
+    return history;
 }
 
 function stylizeJson(text) {

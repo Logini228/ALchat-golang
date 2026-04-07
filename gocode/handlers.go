@@ -75,71 +75,97 @@ func GetMessagesForChat(c *gin.Context) {
 }
 
 func AskLLM(c *gin.Context) {
-
+	// 1. Auth check
 	shortToken, err := c.Cookie("shortJWT")
 	if err != nil || shortToken == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
 		return
 	}
 
-	valid, uuid, email := ParseJWT(shortToken, false)
-	if !valid || uuid == "" || email == "" {
-		gologs.Warning.Println("loginJWT: invalid or expired long token")
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
+	valid, userUUID, email := ParseJWT(shortToken, false)
+	if !valid || userUUID == "" || email == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired token"})
 		return
 	}
 
+	// 2. Parse Request Body
 	bodyBytes, _ := io.ReadAll(c.Request.Body)
 	requestBody := string(bodyBytes)
 	chatid := c.GetHeader("X-chatid")
 
-	request := gjson.Get(requestBody, "messages.0.content").String()
 	reqModels := gjson.Get(requestBody, "model").Array()
-	messagesgjson := gjson.Get(requestBody, "messages").Array()
+	reqPrompt := gjson.Get(requestBody, "prompt").String()
+	reqHistory := gjson.Get(requestBody, "history").Array() // Fixed path
+	isEmpty := gjson.Get(requestBody, "empty").Bool()
 
+	// 3. Assemble Message Chain
+	// OpenRouter expects []map[string]string or a slice of structs
 	var messages []interface{}
-	for _, msg := range messagesgjson {
-		messages = append(messages, msg.Value())
+	systemMsg := gin.H{"role": "system", "content": "answer to user precisely"}
+	messages = append(messages, systemMsg)
+
+	if !isEmpty {
+		for _, entry := range reqHistory {
+			isModel := entry.Get("0").Bool() // [true/false, "content/id"]
+			content := entry.Get("1").String()
+
+			role := "user"
+			if isModel {
+				role = "assistant"
+			}
+
+			// Note: Since you're handling IDs from DB later,
+			// we treat the second index as the text content for now.
+			messages = append(messages, gin.H{"role": role, "content": content})
+		}
 	}
 
-	InsertChatData(chatid, uuid, true, request)
+	// Add the current prompt as the final user message
+	messages = append(messages, gin.H{"role": "user", "content": reqPrompt})
 
-	// Set up NDJSON streaming headers
+	// 4. Save User Prompt to DB
+	InsertChatData(chatid, userUUID, true, reqPrompt)
+
+	// 5. NDJSON Streaming Headers
 	c.Header("Content-Type", "application/x-ndjson")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
 
-	// WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
+	var mu sync.Mutex // Mutex to prevent concurrent writes to the response writer
 
-	for _, model := range reqModels {
-		wg.Add(1) // Increment counter
+	for _, modelResult := range reqModels {
+		wg.Add(1)
 		go func(m string) {
-			defer wg.Done() // Decrement when done
+			defer wg.Done()
 
-			response, resModel := callOpenRouter(messages, m) // Pass m (string)
+			response, resModel := callOpenRouter(messages, m)
 			if response == "" {
-				gologs.Error.Println("something went wrong in AskLLM")
 				return
 			}
 
-			mess_uuid := InsertChatData(chatid, resModel, false, response)
+			// Save Model Response to DB
+			messUUID := InsertChatData(chatid, resModel, false, response)
 
-			// Send via NDJSON
+			// Prepare JSON Chunk
 			responseObj := gin.H{
 				"model":     resModel,
 				"response":  response,
-				"mess_uuid": mess_uuid,
+				"mess_uuid": messUUID,
 			}
 			jsonData, _ := json.Marshal(responseObj)
+
+			// 6. Thread-safe Write
+			mu.Lock()
 			c.Writer.Write(jsonData)
 			c.Writer.WriteString("\n")
 			c.Writer.Flush()
+			mu.Unlock()
 
-		}(model.String()) // Convert gjson.Result to string!
+		}(modelResult.String())
 	}
 
-	wg.Wait() // Wait for all goroutines to complete before function exits
+	wg.Wait()
 }
 
 type LoginRequest struct {
