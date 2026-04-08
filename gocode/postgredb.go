@@ -2,13 +2,13 @@ package gocode
 
 import (
 	"aichat/gologs"
-	"database/sql"
 	"fmt"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
 
-var db *sql.DB
+var db *sqlx.DB
 var user, password, dbname, host, port string
 
 func DBconnect() {
@@ -16,14 +16,15 @@ func DBconnect() {
 		user, password, dbname, host, port)
 
 	var err error
-	db, err = sql.Open("postgres", connStr)
+	// sqlx.Connect does Open and Ping in one go
+	db, err = sqlx.Connect("postgres", connStr)
+
 	if err != nil {
-		gologs.Error.Println("Failed to open database:", err)
-	}
-	if err = db.Ping(); err != nil {
 		gologs.Error.Println("Failed to connect to database:", err)
+		return
 	}
-	gologs.Info.Println("Successfully connected to the database!")
+
+	gologs.Info.Println("Successfully connected to the database with sqlx!")
 }
 
 func CloseDB() {
@@ -454,4 +455,40 @@ func CanAccessChat(uuid string, chatid string) bool {
 	}
 
 	return verified
+}
+
+func messUUIDsToContent(ids []string) map[string]string {
+	if db == nil {
+		gologs.Error.Println("database connection is nil")
+		return nil
+	}
+	contents := make(map[string]string)
+	if len(ids) == 0 {
+		return contents
+	}
+
+	// 1. sqlx.In handles the creation of the (?) placeholders automatically
+	query, args, err := sqlx.In("SELECT mess_uuid, message FROM messages WHERE mess_uuid IN (?)", ids)
+	if err != nil {
+		return contents
+	}
+
+	// 2. Rebind transforms "?" into "$1, $2, $3" for Postgres
+	query = db.Rebind(query)
+
+	// 3. Select (or Query)
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return contents
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var uuid, msg string
+		if err := rows.Scan(&uuid, &msg); err == nil {
+			contents[uuid] = msg
+		}
+	}
+
+	return contents
 }

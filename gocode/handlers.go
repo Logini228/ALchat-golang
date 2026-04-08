@@ -95,30 +95,43 @@ func AskLLM(c *gin.Context) {
 
 	reqModels := gjson.Get(requestBody, "model").Array()
 	reqPrompt := gjson.Get(requestBody, "prompt").String()
-	reqHistory := gjson.Get(requestBody, "history").Array() // Fixed path
+	reqHistory := gjson.Get(requestBody, "history").Array() // has
 	isEmpty := gjson.Get(requestBody, "empty").Bool()
 
-	// 3. Assemble Message Chain
-	// OpenRouter expects []map[string]string or a slice of structs
+	system := "answer to user precisely" //placeholder
+
 	var messages []interface{}
-	systemMsg := gin.H{"role": "system", "content": "answer to user precisely"}
+	systemMsg := gin.H{"role": "system", "content": system}
 	messages = append(messages, systemMsg)
 
+	var ids []string
 	if !isEmpty {
 		for _, entry := range reqHistory {
-			isModel := entry.Get("0").Bool() // [true/false, "content/id"]
+			if entry.Get("0").Bool() {
+				ids = append(ids, entry.Get("1").String())
+			}
+		}
+
+		aiContents := messUUIDsToContent(ids)
+
+		for _, entry := range reqHistory {
+			isModel := entry.Get("0").Bool()
 			content := entry.Get("1").String()
 
-			role := "user"
 			if isModel {
-				role = "assistant"
+				// Add Assistant message from our DB map
+				if contentAI, exists := aiContents[content]; exists {
+					messages = append(messages, gin.H{"role": "assistant", "content": contentAI})
+				}
+			} else {
+				// Add User message directly from the history text
+				messages = append(messages, gin.H{"role": "user", "content": content})
 			}
-
-			// Note: Since you're handling IDs from DB later,
-			// we treat the second index as the text content for now.
-			messages = append(messages, gin.H{"role": role, "content": content})
 		}
 	}
+
+	// CRITICAL: Append the NEW prompt that triggered this call
+	messages = append(messages, gin.H{"role": "user", "content": reqPrompt})
 
 	// Add the current prompt as the final user message
 	messages = append(messages, gin.H{"role": "user", "content": reqPrompt})
