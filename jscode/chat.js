@@ -240,7 +240,7 @@ function loadChat(id) {
                     let modelMessages = [];
                     let j = i + 1;
                     
-                    while (j < msgs.length && msgs[j].sender_user == true) {
+                    while (j < msgs.length && msgs[j].sender_user == false) {
                         modelMessages.push(msgs[j]);
                         j++;
                     }

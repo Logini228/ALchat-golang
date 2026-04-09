@@ -1,11 +1,9 @@
 package gocode
 
 import (
-	"encoding/json"
 	"io"
 	"math/rand/v2"
 	"net/http"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
@@ -75,110 +73,28 @@ func GetMessagesForChat(c *gin.Context) {
 }
 
 func AskLLM(c *gin.Context) {
-	// 1. Auth check
-	shortToken, err := c.Cookie("shortJWT")
-	if err != nil || shortToken == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "Login not success"})
+	shortToken, _ := c.Cookie("shortJWT")
+	valid, userUUID, _ := ParseJWT(shortToken, false)
+	if !valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized"})
 		return
 	}
 
-	valid, userUUID, email := ParseJWT(shortToken, false)
-	if !valid || userUUID == "" || email == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired token"})
-		return
-	}
-
-	// 2. Parse Request Body
 	bodyBytes, _ := io.ReadAll(c.Request.Body)
-	requestBody := string(bodyBytes)
+	body := string(bodyBytes)
 	chatid := c.GetHeader("X-chatid")
 
-	reqModels := gjson.Get(requestBody, "model").Array()
-	reqPrompt := gjson.Get(requestBody, "prompt").String()
-	reqHistory := gjson.Get(requestBody, "history").Array() // has
-	isEmpty := gjson.Get(requestBody, "empty").Bool()
+	reqPrompt := gjson.Get(body, "prompt").String()
+	messages := buildMessageChain(
+		reqPrompt,
+		gjson.Get(body, "history").Array(),
+		gjson.Get(body, "empty").Bool(),
+	)
 
-	system := "answer to user precisely" //placeholder
-
-	var messages []interface{}
-	systemMsg := gin.H{"role": "system", "content": system}
-	messages = append(messages, systemMsg)
-
-	var ids []string
-	if !isEmpty {
-		for _, entry := range reqHistory {
-			if entry.Get("0").Bool() {
-				ids = append(ids, entry.Get("1").String())
-			}
-		}
-
-		aiContents := messUUIDsToContent(ids)
-
-		for _, entry := range reqHistory {
-			isModel := entry.Get("0").Bool()
-			content := entry.Get("1").String()
-
-			if isModel {
-				// Add Assistant message from our DB map
-				if contentAI, exists := aiContents[content]; exists {
-					messages = append(messages, gin.H{"role": "assistant", "content": contentAI})
-				}
-			} else {
-				// Add User message directly from the history text
-				messages = append(messages, gin.H{"role": "user", "content": content})
-			}
-		}
-	}
-
-	// CRITICAL: Append the NEW prompt that triggered this call
-	messages = append(messages, gin.H{"role": "user", "content": reqPrompt})
-
-	// Add the current prompt as the final user message
-	messages = append(messages, gin.H{"role": "user", "content": reqPrompt})
-
-	// 4. Save User Prompt to DB
 	InsertChatData(chatid, userUUID, true, reqPrompt)
 
-	// 5. NDJSON Streaming Headers
 	c.Header("Content-Type", "application/x-ndjson")
-	c.Header("Cache-Control", "no-cache")
-	c.Header("Connection", "keep-alive")
-
-	var wg sync.WaitGroup
-	var mu sync.Mutex // Mutex to prevent concurrent writes to the response writer
-
-	for _, modelResult := range reqModels {
-		wg.Add(1)
-		go func(m string) {
-			defer wg.Done()
-
-			response, resModel := callOpenRouter(messages, m)
-			if response == "" {
-				return
-			}
-
-			// Save Model Response to DB
-			messUUID := InsertChatData(chatid, resModel, false, response)
-
-			// Prepare JSON Chunk
-			responseObj := gin.H{
-				"model":     resModel,
-				"response":  response,
-				"mess_uuid": messUUID,
-			}
-			jsonData, _ := json.Marshal(responseObj)
-
-			// 6. Thread-safe Write
-			mu.Lock()
-			c.Writer.Write(jsonData)
-			c.Writer.WriteString("\n")
-			c.Writer.Flush()
-			mu.Unlock()
-
-		}(modelResult.String())
-	}
-
-	wg.Wait()
+	streamModelResponses(c, chatid, gjson.Get(body, "model").Array(), messages)
 }
 
 type LoginRequest struct {

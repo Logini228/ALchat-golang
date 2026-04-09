@@ -457,37 +457,44 @@ func CanAccessChat(uuid string, chatid string) bool {
 	return verified
 }
 
-func messUUIDsToContent(ids []string) map[string]string {
-	if db == nil {
-		gologs.Error.Println("database connection is nil")
+type MessageData struct {
+	Message    string `db:"message"`
+	Sender     string `db:"sender"`
+	SenderUser bool   `db:"sender_user"`
+}
+
+type Row struct {
+	UUID string `db:"mess_uuid"`
+	MessageData
+}
+
+func messUUIDsToContent(ids []string) map[string]MessageData {
+	if db == nil || len(ids) == 0 {
 		return nil
 	}
-	contents := make(map[string]string)
-	if len(ids) == 0 {
-		return contents
-	}
 
-	// 1. sqlx.In handles the creation of the (?) placeholders automatically
-	query, args, err := sqlx.In("SELECT mess_uuid, message FROM messages WHERE mess_uuid IN (?)", ids)
+	query, args, err := sqlx.In("SELECT mess_uuid, message, sender, sender_user FROM message WHERE mess_uuid IN (?)", ids)
 	if err != nil {
-		return contents
+		gologs.Error.Println("query construction error:", err)
+		return nil
 	}
-
-	// 2. Rebind transforms "?" into "$1, $2, $3" for Postgres
 	query = db.Rebind(query)
 
-	// 3. Select (or Query)
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		return contents
+	type Row struct {
+		UUID string `db:"mess_uuid"`
+		MessageData
 	}
-	defer rows.Close()
+	var results []Row
 
-	for rows.Next() {
-		var uuid, msg string
-		if err := rows.Scan(&uuid, &msg); err == nil {
-			contents[uuid] = msg
-		}
+	err = db.Select(&results, query, args...)
+	if err != nil {
+		gologs.Error.Println("db-related error:", err)
+		return nil
+	}
+
+	contents := make(map[string]MessageData, len(results))
+	for _, r := range results {
+		contents[r.UUID] = r.MessageData
 	}
 
 	return contents

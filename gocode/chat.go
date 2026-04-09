@@ -6,10 +6,75 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
+
+func buildMessageChain(reqPrompt string, reqHistory []gjson.Result, isEmpty bool) []interface{} {
+	var messages []interface{}
+	messages = append(messages, gin.H{"role": "system", "content": "answer to user precisely"})
+
+	if !isEmpty {
+		var ids []string
+		for _, entry := range reqHistory {
+			if entry.Get("0").Bool() {
+				ids = append(ids, entry.Get("1").String())
+			}
+		}
+
+		idsContents := messUUIDsToContent(ids)
+
+		for _, entry := range reqHistory {
+			isID := entry.Get("0").Bool()
+			content := entry.Get("1").String()
+
+			if isID {
+				if data, exists := idsContents[content]; exists {
+					role := "assistant"
+					if data.SenderUser {
+						role = "user"
+					}
+					messages = append(messages, gin.H{"role": role, "content": data.Sender + ": " + data.Message})
+				}
+			} else {
+				messages = append(messages, gin.H{"role": "user", "content": content})
+			}
+		}
+	}
+	messages = append(messages, gin.H{"role": "user", "content": reqPrompt})
+	return messages
+}
+
+func streamModelResponses(c *gin.Context, chatid string, models []gjson.Result, messages []interface{}) {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	for _, modelResult := range models {
+		wg.Add(1)
+		go func(m string) {
+			defer wg.Done()
+			response, resModel := callOpenRouter(messages, m)
+			if response == "" {
+				return
+			}
+
+			messUUID := InsertChatData(chatid, resModel, false, response)
+
+			jsonData, _ := json.Marshal(gin.H{
+				"model": resModel, "response": response, "mess_uuid": messUUID,
+			})
+
+			mu.Lock()
+			c.Writer.Write(jsonData)
+			c.Writer.WriteString("\n")
+			c.Writer.Flush()
+			mu.Unlock()
+		}(modelResult.String())
+	}
+	wg.Wait()
+}
 
 func callOpenRouter(messages []interface{}, reqModel string) (string, string) {
 
