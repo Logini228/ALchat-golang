@@ -24,3 +24,8 @@ go.work
 *.log
 
 *.json
+
+.env
+
+go.mod
+go.sum
