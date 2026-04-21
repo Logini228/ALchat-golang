@@ -74,7 +74,14 @@ func QueryChatMessages(chatid string) ([]ChatMessage, bool) {
 		return nil, false
 	}
 
-	rows, err := db.Query("SELECT sender, sender_user, message, mess_uuid FROM message WHERE chatid=$1 ORDER BY id ASC;", chatid)
+	sqlStatement := `
+		SELECT sender, sender_user, message, mess_uuid 
+		FROM message 
+		WHERE chatid=$1 
+		ORDER BY id ASC;
+	`
+
+	rows, err := db.Query(sqlStatement, chatid)
 	if err != nil {
 		gologs.Error.Printf("Error retrieving chat id %s: %v", chatid, err)
 		return nil, false
@@ -160,8 +167,8 @@ func RegisterWithDB(email string, password string) bool {
 		return false
 	}
 	sqlStatementCheck := `
-    SELECT uuid FROM users
-	WHERE email = ($1)`
+    	SELECT uuid FROM users
+		WHERE email = ($1)`
 
 	var uuid string
 	err := db.QueryRow(sqlStatementCheck, email).Scan(&uuid)
@@ -234,8 +241,7 @@ func VerifyJTI(jti string, uuid string) bool {
 			SELECT 1 
 			FROM users 
 			WHERE uuid = $1 
-			AND $2 = ANY(jtis) 
-		)`
+			AND $2 = ANY(jtis))`
 
 	var verified bool
 	err := db.QueryRow(sqlStatement, uuid, jti).Scan(&verified)

@@ -30,19 +30,12 @@ async function requestLLM(models, message) {
 
         while (true) {
             const { done, value } = await reader.read();
-
+            
             if (done) break;
-
-            // Decode chunk and add to buffer
             buffer += decoder.decode(value, { stream: true });
-
-            // Split by newlines
             const lines = buffer.split('\n');
-
-            // Keep the last incomplete line in buffer
             buffer = lines.pop();
 
-            // Process each complete line
             for (const line of lines) {
                 if (line.trim()) {
                     try {

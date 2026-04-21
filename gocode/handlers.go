@@ -91,10 +91,10 @@ func AskLLM(c *gin.Context) {
 		gjson.Get(body, "empty").Bool(),
 	)
 
-	InsertChatData(chatid, userUUID, true, reqPrompt)
+	mess_uuid := InsertChatData(chatid, userUUID, true, reqPrompt)
 
 	c.Header("Content-Type", "application/x-ndjson")
-	streamModelResponses(c, chatid, gjson.Get(body, "model").Array(), messages)
+	streamModelResponses(c, chatid, gjson.Get(body, "model").Array(), messages, mess_uuid)
 }
 
 type LoginRequest struct {

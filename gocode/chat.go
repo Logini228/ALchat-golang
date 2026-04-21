@@ -47,7 +47,16 @@ func buildMessageChain(reqPrompt string, reqHistory []gjson.Result, isEmpty bool
 	return messages
 }
 
-func streamModelResponses(c *gin.Context, chatid string, models []gjson.Result, messages []interface{}) {
+func streamModelResponses(c *gin.Context, chatid string, models []gjson.Result, messages []interface{}, prompt_mess_uuid string) {
+	initialData, _ := json.Marshal(gin.H{
+		"type":             "prompt_uuid",
+		"prompt_mess_uuid": prompt_mess_uuid,
+	})
+
+	c.Writer.Write(initialData)
+	c.Writer.WriteString("\n")
+	c.Writer.Flush()
+
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
