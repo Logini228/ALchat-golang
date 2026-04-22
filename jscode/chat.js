@@ -21,7 +21,7 @@ async function requestLLM(models, message) {
                 "history": history,
                 "empty": empty
             }),
-            credentials:"include"
+            credentials: "include"
         });
 
         const reader = response.body.getReader();
@@ -30,7 +30,7 @@ async function requestLLM(models, message) {
 
         while (true) {
             const { done, value } = await reader.read();
-            
+
             if (done) break;
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
@@ -40,14 +40,7 @@ async function requestLLM(models, message) {
                 if (line.trim()) {
                     try {
                         const data = JSON.parse(line);
-                        const model = data.model;
-                        const mess_uuid = data.mess_uuid;
-                        const responseText = data.response;
-
-                        // Update UI with each chunk
-                        
-                        fillAnswers([model, stylizeJson(responseText)], mess_uuid);
-
+                        fillAnswers([data.model, stylizeJson(data.response || ""), data.mess_uuid]);
                     } catch (e) {
                         console.error('Failed to parse line:', line, e);
                     }
@@ -74,44 +67,57 @@ async function requestLLM(models, message) {
 function createQuestion(s) {
     const innerBlock = document.querySelector('.inner-block');
     const newDiv = document.createElement('div');
-    newDiv.className = 'question-box';
-    newDiv.innerHTML = '<p>' + s + '</p>';
+    newDiv.className = 'question-box'; // fillAnswers looks for this class
+    newDiv.innerHTML = `
+        <div class="question-header" style="display:flex; justify-content:flex-end;">
+            <sl-switch class="answer-toggle" checked size="small"></sl-switch>
+        </div>
+        <p class="question-text">${s}</p>
+    `;
     innerBlock.appendChild(newDiv);
 }
 
-function createAnswers(a) {
-  const innerBlock = document.querySelector('.inner-block');
-  const newDiv = document.createElement('div');
-  newDiv.className = 'answer-container';
-  newDiv.style.width = 'stretch';
+function fillAnswers([modelName, content, id]) {
+    if (modelName === "prompt") {
 
-  const detailsGroupDiv = document.createElement('div');
-  detailsGroupDiv.className = 'details-group';
+        const questions = document.querySelectorAll('.question-box');
+        const latestQuestion = questions[questions.length - 1];
+        latestQuestion.setAttribute('data-id', id);
 
-  a.forEach(str => {
-    const detailsElement = document.createElement('sl-details');
-    detailsElement.disabled = true;
+    } else {
 
-    const summaryDiv = document.createElement('div');
-    summaryDiv.setAttribute('slot', 'summary');
-    // Flexbox to keep name left and toggle right
-    summaryDiv.style.display = 'flex';
-    summaryDiv.style.justifyContent = 'space-between';
-    summaryDiv.style.alignItems = 'center';
-    summaryDiv.style.width = '100%';
+        const allDetails = document.querySelectorAll('sl-details');
+        let targetElement = null;
 
-    summaryDiv.innerHTML = `
-      <span class="model-name">${str}</span>
-      <sl-switch class="answer-toggle" checked onclick="event.stopPropagation()"></sl-switch>
-    `;
+        for (let i = allDetails.length - 1; i >= 0; i--) {
+            const summaryName = allDetails[i].querySelector('.model-name');
+            if (summaryName && summaryName.textContent === modelName) {
+                targetElement = allDetails[i];
+                break;
+            }
+        }
 
-    detailsElement.appendChild(summaryDiv);
-    detailsGroupDiv.appendChild(detailsElement);
-  });
+        if (targetElement) {
+            targetElement.setAttribute('data-id', id);
 
-  newDiv.appendChild(detailsGroupDiv);
-  innerBlock.appendChild(newDiv);
-  addDetailsEventListener(detailsGroupDiv);
+            // Error handling logic
+            const errorMsgs = ['Provider returned error', 'No endpoints available'];
+            if (errorMsgs.some(msg => content.includes(msg))) {
+                const summaryName = targetElement.querySelector('.model-name');
+                if (!summaryName.querySelector('sl-tag')) {
+                    summaryName.innerHTML += ' <sl-tag variant="danger" size="small">error</sl-tag>';
+                }
+                const toggle = targetElement.querySelector('.answer-toggle');
+                if (toggle) toggle.checked = false;
+            }
+
+            const contentWrapper = document.createElement('div');
+            contentWrapper.innerHTML = content;
+            targetElement.appendChild(contentWrapper);
+
+            targetElement.disabled = false;
+        }
+    }
 }
 
 function clearChatContent() {
@@ -123,51 +129,50 @@ function clearChatContent() {
     }
 }
 
-function fillAnswers([s, ss, id]) {
-  const allDetails = document.querySelectorAll('sl-details');
-  let targetElement = null;
+function fillAnswers([modelName, content, id]) {
+    const allDetails = document.querySelectorAll('sl-details');
+    let targetElement = null;
 
-  for (let i = allDetails.length - 1; i >= 0; i--) {
-    const summaryName = allDetails[i].querySelector('.model-name');
-    if (summaryName && summaryName.textContent === s) {
-      targetElement = allDetails[i];
-      break;
-    }
-  }
-
-  if (targetElement) {
-    // Apply the ID
-    targetElement.setAttribute('data-answer-id', id);
-
-    const toggle = targetElement.querySelector('.answer-toggle');
-    
-    if (ss == 'Provider returned error' || ss == "No endpoints available matching your guardrail restrictions and data policy. Configure: https://openrouter.ai/settings/privacy") {
-      const summaryName = targetElement.querySelector('.model-name');
-      summaryName.innerHTML += ' <sl-tag variant="danger" size="small">error</sl-tag>';
-      
-      // Turn toggle off for errors
-      if (toggle) toggle.checked = false;
+    for (let i = allDetails.length - 1; i >= 0; i--) {
+        const nameEl = allDetails[i].querySelector('.model-name');
+        if (nameEl && nameEl.textContent === modelName) {
+            targetElement = allDetails[i];
+            break;
+        }
     }
 
-    const contentWrapper = document.createElement('div');
-    contentWrapper.innerHTML = ss;
-    targetElement.appendChild(contentWrapper);
-    targetElement.disabled = false;
-  }
+    if (targetElement) {
+        if (id) targetElement.setAttribute('data-id', id);
+
+        if (modelName !== "prompt") {
+            const contentWrapper = document.createElement('div');
+            contentWrapper.innerHTML = content;
+            targetElement.appendChild(contentWrapper);
+        }
+
+        targetElement.disabled = false;
+
+        if (content.includes('error') || content.includes('No endpoints available')) {
+            const nameEl = targetElement.querySelector('.model-name');
+            nameEl.innerHTML += ' <sl-tag variant="danger" size="small">error</sl-tag>';
+            const toggle = targetElement.querySelector('.answer-toggle');
+            if (toggle) toggle.checked = false;
+        }
+    }
 }
 
 function getSelectedAnswerIds() {
-  const activeIds = [];
-  const allDetails = document.querySelectorAll('sl-details[data-answer-id]');
+    const activeIds = [];
+    const allDetails = document.querySelectorAll('sl-details[data-id]');
 
-  allDetails.forEach(el => {
-    const toggle = el.querySelector('.answer-toggle');
-    if (toggle && toggle.checked) {
-      activeIds.push(el.getAttribute('data-answer-id'));
-    }
-  });
+    allDetails.forEach(el => {
+        const toggle = el.querySelector('.answer-toggle');
+        if (toggle && toggle.checked) {
+            activeIds.push(el.getAttribute('data-id'));
+        }
+    });
 
-  return activeIds;
+    return activeIds;
 }
 
 async function loadChatList() {
@@ -225,14 +230,14 @@ function loadChat(id) {
             if (!data.valid || !Array.isArray(data.messages)) return;
 
             const msgs = data.messages;
-            
+
             for (let i = 0; i < msgs.length; i++) {
                 if (msgs[i].sender_user == true) {
                     createQuestion(msgs[i].message);
 
                     let modelMessages = [];
                     let j = i + 1;
-                    
+
                     while (j < msgs.length && msgs[j].sender_user == false) {
                         modelMessages.push(msgs[j]);
                         j++;
@@ -280,30 +285,37 @@ function moveUserTo(chatid) {
 function getHistory() {
     const history = [];
     const innerBlock = document.querySelector('.inner-block');
-    
     if (!innerBlock) return history;
 
     const elements = innerBlock.children;
 
     for (let el of elements) {
         if (el.classList.contains('question-box')) {
-            const promptText = el.querySelector('p')?.innerText || "";
-            history.push([false, promptText]);
-        } 
-        
+            const toggle = el.querySelector('.answer-toggle');
+
+            if (toggle && toggle.checked) {
+                const id = el.getAttribute('data-id');
+                const text = el.querySelector('.question-text')?.innerText || "";
+
+                if (id) { history.push([true, id]); }
+                else { history.push([false, text]) }
+            }
+        }
+
         else if (el.classList.contains('answer-container')) {
-            const allDetails = el.querySelectorAll('sl-details[data-answer-id]');
-            
-            allDetails.forEach(detail => {
-                const toggle = detail.querySelector('.answer-toggle');
-                const answerId = detail.getAttribute('data-answer-id');
-                
-                if (toggle && toggle.checked && answerId) {
-                    history.push([true, answerId]);
+            const allDetails = el.querySelectorAll('sl-details');
+
+            allDetails.forEach(det => {
+                const detToggle = det.querySelector('.answer-toggle');
+                const detId = det.getAttribute('data-id');
+
+                if (detToggle && detToggle.checked && detId) {
+                    history.push([true, detId]);
                 }
             });
         }
-    }
+    };
+
     return history;
 }
 
