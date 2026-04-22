@@ -47,10 +47,9 @@ func buildMessageChain(reqPrompt string, reqHistory []gjson.Result, isEmpty bool
 	return messages
 }
 
-func streamModelResponses(c *gin.Context, chatid string, models []gjson.Result, messages []interface{}, prompt_mess_uuid string) {
+func streamModelResponses(c *gin.Context, chatid string, models []gjson.Result, messages []interface{}, promptMessUUID string) {
 	initialData, _ := json.Marshal(gin.H{
-		"type":             "prompt_uuid",
-		"prompt_mess_uuid": prompt_mess_uuid,
+		"model": "prompt", "response": " ", "mess_uuid": promptMessUUID,
 	})
 
 	c.Writer.Write(initialData)
@@ -65,6 +64,7 @@ func streamModelResponses(c *gin.Context, chatid string, models []gjson.Result, 
 		go func(m string) {
 			defer wg.Done()
 			response, resModel := callOpenRouter(messages, m)
+			gologs.Info.Println(response)
 			if response == "" {
 				return
 			}
