@@ -1,11 +1,10 @@
 -- schema.sql
--- psql -h 127.0.0.1 -U postgresdb -d postgresdb -f schema.sql
+-- psql -h 127.0.0.1 -U postgresuser -d postgresdb -f schema.sql
 
-DROP SCHEMA IF EXISTS public CASCADE;
-CREATE SCHEMA public;
+DROP SCHEMA IF EXISTS chat_app CASCADE;
+CREATE SCHEMA chat_app;
 
-GRANT ALL ON SCHEMA public TO postgresdb;
-GRANT ALL ON SCHEMA public TO public;
+SET search_path TO chat_app;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
