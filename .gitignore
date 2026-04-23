@@ -35,3 +35,6 @@ go.sum
 test.html
 dev.html
 dev_styles.css
+
+logs/
+*.log

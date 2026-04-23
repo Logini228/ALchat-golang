@@ -12,7 +12,7 @@ var db *sqlx.DB
 var user, password, dbname, host, port string
 
 func DBconnect() {
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable search_path=chat_app",
 		user, password, dbname, host, port)
 
 	var err error

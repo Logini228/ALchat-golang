@@ -77,6 +77,41 @@ function createQuestion(s) {
     innerBlock.appendChild(newDiv);
 }
 
+function createAnswers(a) {
+    const innerBlock = document.querySelector('.inner-block');
+    const newDiv = document.createElement('div');
+    newDiv.className = 'answer-container';
+    newDiv.style.width = 'stretch';
+
+    const detailsGroupDiv = document.createElement('div');
+    detailsGroupDiv.className = 'details-group';
+
+    a.forEach(str => {
+        const detailsElement = document.createElement('sl-details');
+        detailsElement.disabled = true;
+
+        const summaryDiv = document.createElement('div');
+        summaryDiv.setAttribute('slot', 'summary');
+        // Flexbox to keep name left and toggle right
+        summaryDiv.style.display = 'flex';
+        summaryDiv.style.justifyContent = 'space-between';
+        summaryDiv.style.alignItems = 'center';
+        summaryDiv.style.width = '100%';
+
+        summaryDiv.innerHTML = `
+      <span class="model-name">${str}</span>
+      <sl-switch class="answer-toggle" checked onclick="event.stopPropagation()"></sl-switch>
+    `;
+
+        detailsElement.appendChild(summaryDiv);
+        detailsGroupDiv.appendChild(detailsElement);
+    });
+
+    newDiv.appendChild(detailsGroupDiv);
+    innerBlock.appendChild(newDiv);
+    addDetailsEventListener(detailsGroupDiv);
+}
+
 function fillAnswers([modelName, content, id]) {
     if (modelName === "prompt") {
 
