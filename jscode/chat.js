@@ -77,83 +77,56 @@ function createQuestion(s) {
     innerBlock.appendChild(newDiv);
 }
 
-function createAnswers(a) {
+function createAnswers(ids) {
     const innerBlock = document.querySelector('.inner-block');
-    const newDiv = document.createElement('div');
-    newDiv.className = 'answer-container';
-    newDiv.style.width = 'stretch';
+    const container = document.createElement('div');
+    container.className = 'answer-container pending-group'; // Mark this group
 
-    const detailsGroupDiv = document.createElement('div');
-    detailsGroupDiv.className = 'details-group';
-
-    a.forEach(str => {
-        const detailsElement = document.createElement('sl-details');
-        detailsElement.disabled = true;
-
-        const summaryDiv = document.createElement('div');
-        summaryDiv.setAttribute('slot', 'summary');
-        // Flexbox to keep name left and toggle right
-        summaryDiv.style.display = 'flex';
-        summaryDiv.style.justifyContent = 'space-between';
-        summaryDiv.style.alignItems = 'center';
-        summaryDiv.style.width = '100%';
-
-        summaryDiv.innerHTML = `
-      <span class="model-name">${str}</span>
-      <sl-switch class="answer-toggle" checked onclick="event.stopPropagation()"></sl-switch>
-    `;
-
-        detailsElement.appendChild(summaryDiv);
-        detailsGroupDiv.appendChild(detailsElement);
+    ids.forEach(() => {
+        const el = document.createElement('sl-details');
+        el.disabled = true;
+        el.innerHTML = `<div slot="summary" class="model-name">Waiting for response...</div>`;
+        container.appendChild(el);
     });
 
-    newDiv.appendChild(detailsGroupDiv);
-    innerBlock.appendChild(newDiv);
-    addDetailsEventListener(detailsGroupDiv);
+    innerBlock.appendChild(container);
 }
 
 function fillAnswers([modelName, content, id]) {
     if (modelName === "prompt") {
-
         const questions = document.querySelectorAll('.question-box');
         const latestQuestion = questions[questions.length - 1];
         latestQuestion.setAttribute('data-id', id);
+        return;
+    }
 
-    } else {
+    const pendingGroups = document.querySelectorAll('.pending-group');
+    if (!pendingGroups.length) return;
+    
+    const latestGroup = pendingGroups[pendingGroups.length - 1];
+    const targetElement = Array.from(latestGroup.querySelectorAll('sl-details')).find(el => el.disabled);
 
-        const allDetails = document.querySelectorAll('sl-details');
-        let targetElement = null;
+    if (targetElement) {
+        targetElement.setAttribute('data-id', id);
+        
+        const summaryName = targetElement.querySelector('.model-name');
+        summaryName.textContent = modelName; 
 
-        for (let i = allDetails.length - 1; i >= 0; i--) {
-            const summaryName = allDetails[i].querySelector('.model-name');
-            if (summaryName && summaryName.textContent === modelName) {
-                targetElement = allDetails[i];
-                break;
-            }
+        const errorMsgs = ['Provider returned error', 'No endpoints available'];
+        if (errorMsgs.some(msg => content.includes(msg))) {
+            summaryName.innerHTML += ' <sl-tag variant="danger" size="small">error</sl-tag>';
+            const toggle = targetElement.querySelector('.answer-toggle');
+            if (toggle) toggle.checked = false;
         }
 
-        if (targetElement) {
-            targetElement.setAttribute('data-id', id);
+        const contentWrapper = document.createElement('div');
+        contentWrapper.innerHTML = content;
+        targetElement.appendChild(contentWrapper);
 
-            // Error handling logic
-            const errorMsgs = ['Provider returned error', 'No endpoints available'];
-            if (errorMsgs.some(msg => content.includes(msg))) {
-                const summaryName = targetElement.querySelector('.model-name');
-                if (!summaryName.querySelector('sl-tag')) {
-                    summaryName.innerHTML += ' <sl-tag variant="danger" size="small">error</sl-tag>';
-                }
-                const toggle = targetElement.querySelector('.answer-toggle');
-                if (toggle) toggle.checked = false;
-            }
-
-            const contentWrapper = document.createElement('div');
-            contentWrapper.innerHTML = content;
-            targetElement.appendChild(contentWrapper);
-
-            targetElement.disabled = false;
-        }
+        targetElement.disabled = false;
     }
 }
+
 
 function clearChatContent() {
     const innerBlock = document.querySelector('.inner-block');
