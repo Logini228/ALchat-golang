@@ -37,7 +37,6 @@ function getHistory() {
 var textbox = document.getElementById('mytextbox');
 var modelbox = document.getElementById('modelbox');
 
-console.log("chat.js loaded")
 
 
 function createQuestion(s) {
@@ -78,15 +77,15 @@ function fillAnswers([modelName, content, id]) {
 
     const pendingGroups = document.querySelectorAll('.pending-group');
     if (!pendingGroups.length) return;
-    
+
     const latestGroup = pendingGroups[pendingGroups.length - 1];
     const targetElement = Array.from(latestGroup.querySelectorAll('sl-details')).find(el => el.disabled);
 
     if (targetElement) {
         targetElement.setAttribute('data-id', id);
-        
+
         const summaryName = targetElement.querySelector('.model-name');
-        summaryName.textContent = modelName; 
+        summaryName.textContent = modelName;
 
         const errorMsgs = ['Provider returned error', 'No endpoints available'];
         if (errorMsgs.some(msg => content.includes(msg))) {
@@ -183,88 +182,6 @@ function getChatIdFromURL() {
     return match ? match[1] : null;
 }
 
-
-
-
-
-
-
-
-
-function stylizeJson(text) {
-    if (typeof text !== 'string') {
-        text = String(text);
-    }
-
-    let html = text;
-
-    // 1. Code blocks (must be done first, before other replacements)
-    html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-        return `<pre><code class="language-${lang || 'text'}">${escapeHtml(code.trim())}</code></pre>`;
-    });
-
-    // 2. Tables (detect and convert markdown tables)
-    html = html.replace(/(\|.+\|[\r\n]+\|[-:\s|]+\|[\r\n]+(?:\|.+\|[\r\n]*)+)/g, (match) => {
-        const rows = match.trim().split('\n').map(row =>
-            row.split('|').slice(1, -1).map(cell => cell.trim())
-        );
-
-        const header = rows[0];
-        const body = rows.slice(2); // Skip separator row
-
-        let table = '<table><thead><tr>';
-        header.forEach(cell => table += `<th>${cell}</th>`);
-        table += '</tr></thead><tbody>';
-        body.forEach(row => {
-            table += '<tr>';
-            row.forEach(cell => table += `<td>${cell}</td>`);
-            table += '</tr>';
-        });
-        table += '</tbody></table>';
-        return table;
-    });
-
-    // 3. Headers (h1-h6)
-    html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
-    html = html.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
-    html = html.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
-    html = html.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
-    html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
-    html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
-
-    // 4. Blockquotes
-    html = html.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
-
-    // 5. Horizontal rules
-    html = html.replace(/^---$/gm, '<hr>');
-
-    // 6. Unordered lists
-    html = html.replace(/^\*\s+(.+)$/gm, '<li>$1</li>');
-    html = html.replace(/^-\s+(.+)$/gm, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-
-    // 7. Ordered lists
-    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
-
-    // 8. Bold (before italic to avoid conflicts)
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-    // 9. Italic
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-
-    // 10. Inline code
-    html = html.replace(/`(.+?)`/g, '<code>$1</code>');
-
-    // 11. Links [text](url)
-    html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
-
-    // 12. Line breaks (do this last)
-    html = html.replace(/\n/g, '<br>');
-
-    return html;
-}
-
 // Helper function to escape HTML in code blocks
 function escapeHtml(text) {
     const map = {
@@ -279,11 +196,6 @@ function escapeHtml(text) {
 
 var counter = 0;
 var modelbox = document.querySelector('.models-input');
-
-console.log("model.js loaded")
-
-
-
 
 
 function createCheckboxFromModel(aggregator, provider, id, name, price, context, inputs, outputs) {
@@ -314,7 +226,7 @@ function createCheckboxFromModel(aggregator, provider, id, name, price, context,
 function deleteModels() {
     const checkboxList = document.querySelector('.checkbox-list');
     const checkboxItems = checkboxList.querySelectorAll('.checkbox-item');
-    
+
     // Remove only unchecked items
     checkboxItems.forEach(item => {
         const checkbox = item.querySelector('input[type="checkbox"]');
@@ -327,7 +239,7 @@ function deleteModels() {
 function getSelectedModels() {
     const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]:checked');
     const selectedModels = [];
-    
+
     checkboxes.forEach(checkbox => {
         selectedModels.push({
             aggregator: checkbox.dataset.aggregator,
@@ -336,7 +248,99 @@ function getSelectedModels() {
             name: checkbox.dataset.name
         });
     });
-    
+
     return selectedModels;
 }
 
+const textarea = document.querySelector('.auto-grow-textarea');
+
+
+const autoResize = () => {
+  textarea.style.height = 'auto'; // Reset to natural height
+  textarea.style.height = Math.min(
+    textarea.scrollHeight, // Height needed for content
+    parseFloat(getComputedStyle(textarea).maxHeight) // Cap at max-height
+  ) + 'px';
+};
+textarea.addEventListener('input', autoResize);
+autoResize();
+
+// Function to add event listener to a details-group container
+function addDetailsEventListener(container) {
+  container.addEventListener('sl-show', event => {
+    if (event.target.localName === 'sl-details') {
+      [...container.querySelectorAll('sl-details')].map(details => (details.open = event.target === details));
+    }
+  });
+}
+
+function infoToast(message) {
+  const toast = Object.assign(document.createElement('sl-alert'), {
+    variant: 'primary',
+    duration: 3000,
+    closable: true,
+    innerHTML: `
+            <sl-icon slot="icon" name="info-circle"></sl-icon>
+            <strong>Info</strong><br>
+            ${message}        `
+  });
+
+  document.body.append(toast);
+  toast.toast();
+
+  // Clean up after it's hidden
+  toast.addEventListener('sl-after-hide', () => toast.remove());
+}
+
+function successToast(message) {
+  const toast = Object.assign(document.createElement('sl-alert'), {
+    variant: 'success',
+    duration: 3000,
+    closable: true,
+    innerHTML: `
+            <sl-icon slot="icon" name="check-circle"></sl-icon>
+            <strong>Success</strong><br>
+            ${message}        `
+  });
+
+  document.body.append(toast);
+  toast.toast();
+
+  // Clean up after it's hidden
+  toast.addEventListener('sl-after-hide', () => toast.remove());
+}
+
+function warnToast(message) {
+  const toast = Object.assign(document.createElement('sl-alert'), {
+    variant: 'warning',
+    duration: 3000,
+    closable: true,
+    innerHTML: `
+            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+            <strong>Warning</strong><br>
+            ${message}        `
+  });
+
+  document.body.append(toast);
+  toast.toast();
+
+  toast.addEventListener('sl-after-hide', () => toast.remove());
+}
+
+function errorToast(message) {
+  const toast = Object.assign(document.createElement('sl-alert'), {
+    variant: 'danger',
+    duration: 3000,
+    closable: true,
+    innerHTML: `
+            <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
+            <strong>Error</strong><br>
+            ${message}
+        `
+  });
+
+  document.body.append(toast);
+  toast.toast();
+
+  toast.addEventListener('sl-after-hide', () => toast.remove());
+}

@@ -46,3 +46,4 @@ function handleChatlistClick(id) {
     loadChat(id)
     return true
 }
+
