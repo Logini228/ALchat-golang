@@ -1,68 +1,44 @@
+function getHistory() {
+    const history = [];
+    const innerBlock = document.querySelector('.inner-block');
+    if (!innerBlock) return history;
+
+    const elements = innerBlock.children;
+
+    for (let el of elements) {
+        if (el.classList.contains('question-box')) {
+            const toggle = el.querySelector('.answer-toggle');
+
+            if (toggle && toggle.checked) {
+                const id = el.getAttribute('data-id');
+                const text = el.querySelector('.question-text')?.innerText || "";
+
+                if (id) { history.push([true, id]); }
+                else { history.push([false, text]) }
+            }
+        }
+
+        else if (el.classList.contains('answer-container')) {
+            const allDetails = el.querySelectorAll('sl-details');
+
+            allDetails.forEach(det => {
+                const detToggle = det.querySelector('.answer-toggle');
+                const detId = det.getAttribute('data-id');
+
+                if (detToggle && detToggle.checked && detId) {
+                    history.push([true, detId]);
+                }
+            });
+        }
+    };
+
+    return history;
+}
 var textbox = document.getElementById('mytextbox');
 var modelbox = document.getElementById('modelbox');
 
 console.log("chat.js loaded")
 
-async function requestLLM(models, message) {
-    try {
-        const history = getHistory();
-        const empty = (history.length === 0);
-
-        const response = await fetch("http://localhost:8080/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "X-chatid": getChatIdFromURL()
-            },
-            body: JSON.stringify({
-                "model": models,
-                "prompt": message,
-                "history": history,
-                "empty": empty
-            }),
-            credentials: "include"
-        });
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop();
-
-            for (const line of lines) {
-                if (line.trim()) {
-                    try {
-                        const data = JSON.parse(line);
-                        fillAnswers([data.model, stylizeJson(data.response || ""), data.mess_uuid]);
-                    } catch (e) {
-                        console.error('Failed to parse line:', line, e);
-                    }
-                }
-            }
-        }
-
-        // Handle any remaining data in buffer
-        if (buffer.trim()) {
-            try {
-                const data = JSON.parse(buffer);
-                fillAnswers([data.model, stylizeJson(data.response)]);
-            } catch (e) {
-                console.error('Failed to parse final buffer:', buffer, e);
-            }
-        }
-
-    } catch (error) {
-        console.error('Error:', error);
-        document.getElementById("datta").innerHTML = "Error: " + error;
-    }
-}
 
 function createQuestion(s) {
     const innerBlock = document.querySelector('.inner-block');
@@ -183,29 +159,7 @@ function getSelectedAnswerIds() {
     return activeIds;
 }
 
-async function loadChatList() {
-    try {
-        const response = await fetch('http://localhost:8080/chatlist', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                "g-recaptcha-response": 0
-            },
-            credentials: 'include',
-            body: JSON.stringify({})
-        });
 
-        const data = await response.json();
-        const nestedChats = data.chatlist.map(c => [c.chat_id, c.chat_name])
-        console.log("chats: ", nestedChats);
-
-
-        return nestedChats;
-    } catch (err) {
-        warnToast('Error getting chatlist:', err);
-        return [[]]
-    }
-}
 
 function renderChatList(data) {
     const container = document.querySelector('.chat-list');
@@ -229,103 +183,13 @@ function getChatIdFromURL() {
     return match ? match[1] : null;
 }
 
-function loadChat(id) {
-    if (!id) return;
 
-    fetch(`http://localhost:8080/chat/${id}`, { credentials: 'include' })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.valid || !Array.isArray(data.messages)) return;
 
-            const msgs = data.messages;
 
-            for (let i = 0; i < msgs.length; i++) {
-                if (msgs[i].sender_user == true) {
-                    createQuestion(msgs[i].message);
 
-                    let modelMessages = [];
-                    let j = i + 1;
 
-                    while (j < msgs.length && msgs[j].sender_user == false) {
-                        modelMessages.push(msgs[j]);
-                        j++;
-                    }
 
-                    if (modelMessages.length > 0) {
-                        const modelNames = modelMessages.map(m => m.sender);
-                        createAnswers(modelNames);
-                        modelMessages.forEach(m => {
-                            fillAnswers([m.sender, stylizeJson(m.message), m.mess_uuid]);
-                        });
-                    }
 
-                    i = j - 1;
-                }
-            }
-        })
-        .catch(error => console.error("Fetch error:", error));
-}
-
-window.addEventListener('popstate', () => {
-    loadChat(getChatIdFromURL());
-});
-
-window.addEventListener('load', () => {
-    loadChat(getChatIdFromURL());
-});
-
-async function newChat() {
-    const response = await fetch('http://localhost:8080/newchat', { method: 'POST', credentials: "include" });
-    const data = await response.json();
-
-    chatid = data.chatid;
-
-    if (chatid != undefined) {
-        moveUserTo(chatid)
-    }
-}
-
-function moveUserTo(chatid) {
-    window.history.pushState({}, "", `/chat/${chatid}`);
-    return true;
-}
-
-function getHistory() {
-    const history = [];
-    const innerBlock = document.querySelector('.inner-block');
-    if (!innerBlock) return history;
-
-    const elements = innerBlock.children;
-
-    for (let el of elements) {
-        if (el.classList.contains('question-box')) {
-            const toggle = el.querySelector('.answer-toggle');
-
-            if (toggle && toggle.checked) {
-                const id = el.getAttribute('data-id');
-                const text = el.querySelector('.question-text')?.innerText || "";
-
-                if (id) { history.push([true, id]); }
-                else { history.push([false, text]) }
-            }
-        }
-
-        else if (el.classList.contains('answer-container')) {
-            const allDetails = el.querySelectorAll('sl-details');
-
-            allDetails.forEach(det => {
-                const detToggle = det.querySelector('.answer-toggle');
-                const detId = det.getAttribute('data-id');
-
-                if (detToggle && detToggle.checked && detId) {
-                    history.push([true, detId]);
-                }
-            });
-        }
-    };
-
-    return history;
-}
 
 function stylizeJson(text) {
     if (typeof text !== 'string') {
@@ -412,3 +276,67 @@ function escapeHtml(text) {
     };
     return text.replace(/[&<>"']/g, m => map[m]);
 }
+
+var counter = 0;
+var modelbox = document.querySelector('.models-input');
+
+console.log("model.js loaded")
+
+
+
+
+
+function createCheckboxFromModel(aggregator, provider, id, name, price, context, inputs, outputs) {
+    const checkboxList = document.querySelector('.checkbox-list');
+
+    const newDiv = document.createElement('div');
+    newDiv.className = 'checkbox-item';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = 'model-' + counter;
+    checkbox.value = id;
+    checkbox.dataset.aggregator = aggregator;
+    checkbox.dataset.provider = provider;
+    checkbox.dataset.name = name;
+
+    const label = document.createElement('label');
+    label.htmlFor = 'model-' + counter;
+    label.textContent = name;
+
+    newDiv.appendChild(checkbox);
+    newDiv.appendChild(label);
+    checkboxList.appendChild(newDiv);
+
+    counter++;
+}
+
+function deleteModels() {
+    const checkboxList = document.querySelector('.checkbox-list');
+    const checkboxItems = checkboxList.querySelectorAll('.checkbox-item');
+    
+    // Remove only unchecked items
+    checkboxItems.forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (!checkbox.checked) {
+            item.remove();
+        }
+    });
+}
+
+function getSelectedModels() {
+    const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]:checked');
+    const selectedModels = [];
+    
+    checkboxes.forEach(checkbox => {
+        selectedModels.push({
+            aggregator: checkbox.dataset.aggregator,
+            provider: checkbox.dataset.provider,
+            id: checkbox.value,
+            name: checkbox.dataset.name
+        });
+    });
+    
+    return selectedModels;
+}
+
