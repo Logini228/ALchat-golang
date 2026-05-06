@@ -233,7 +233,7 @@ const CLIENT_ID = '310803326430-1kp91brnc26sg0s2ioai89hr3fipjren.apps.googleuser
 const REDIRECT_URI = 'http://localhost:3000';
 
 function requestModels() {
-    deleteModels();
+    clearModels();
 
     fetch("http://127.0.0.1:8080/models", {
         method: "POST",
