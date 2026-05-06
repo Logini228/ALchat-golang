@@ -197,30 +197,30 @@ function escapeHtml(text) {
 var counter = 0;
 var modelbox = document.querySelector('.models-input');
 
+/**
+ * createCheckboxFromModel
+ * Adds model to list with 'disabled' class by default.
+ */
+function createCheckboxFromModel(aggregator, provider, id, name) {
+  const list = document.getElementById('body-models');
+  if (!list) return;
 
-function createCheckboxFromModel(aggregator, provider, id, name, price, context, inputs, outputs) {
-    const checkboxList = document.querySelector('.checkbox-list');
-
-    const newDiv = document.createElement('div');
-    newDiv.className = 'checkbox-item';
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = 'model-' + counter;
-    checkbox.value = id;
-    checkbox.dataset.aggregator = aggregator;
-    checkbox.dataset.provider = provider;
-    checkbox.dataset.name = name;
-
-    const label = document.createElement('label');
-    label.htmlFor = 'model-' + counter;
-    label.textContent = name;
-
-    newDiv.appendChild(checkbox);
-    newDiv.appendChild(label);
-    checkboxList.appendChild(newDiv);
-
-    counter++;
+  const item = document.createElement('div');
+  // Added 'disabled' class by default
+  item.className = 'model-item disabled';
+  item.dataset.id = id;
+  item.dataset.agg = aggregator;
+  item.dataset.prov = provider;
+  
+  // Logic: Click to toggle activation
+  item.onclick = () => toggleModel(id);
+  
+  item.innerHTML = `
+    <span class="model-dot" style="background:var(--primary)"></span>
+    <span class="model-lbl">${escapeHtml(name)}</span>
+  `;
+  
+  list.appendChild(item);
 }
 
 function deleteModels() {

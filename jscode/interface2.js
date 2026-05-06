@@ -17,52 +17,102 @@ function createQuestion(s) {
   mc.appendChild(q);
   mc.scrollTop = mc.scrollHeight;
 }
-
+/**
+ * createAnswers
+ * Uses model-panel class. Default state is open (not collapsed).
+ * Groups panels inside responses-wrap.
+ */
+/**
+ * createAnswers
+ * Matches precise HTML structure: responses-wrap > model-panel.
+ * IDs follow pattern: panel-[msgIdx]-[modelId].
+ */
 function createAnswers(ids) {
   const mc = document.getElementById('msg-container');
+  const msgIdx = mc.querySelectorAll('.answer-container').length + 1;
+  
   const group = document.createElement('div');
   group.className = 'answer-container pending-group';
   
+  const wrap = document.createElement('div');
+  wrap.className = 'responses-wrap';
+
   ids.forEach(id => {
-    const detail = document.createElement('div');
-    detail.className = 'sl-details open';
-    detail.innerHTML = `
-      <div class="panel-hdr" onclick="this.parentElement.classList.toggle('open')">
+    // Determine color variable based on common model keys
+    const colorMap = { gpt4: 'primary', claude: 'secondary', gemini: 'tertiary' };
+    const cv = `var(--${colorMap[id] || 'primary'})`;
+    
+    const panel = document.createElement('div');
+    panel.className = 'model-panel';
+    panel.id = `panel-${msgIdx}-${id}`;
+    
+    panel.innerHTML = `
+      <div class="panel-hdr" onclick="togglePanel(${msgIdx},'${id}')">
         <div class="panel-hdr-left">
-          <span class="icon arrow">keyboard_arrow_down</span>
-          <span class="model-name">${id.toUpperCase()}</span>
+          <span class="icon panel-arrow" style="color:${cv}">keyboard_arrow_down</span>
+          <span class="panel-name" style="color:${cv}">${id.toUpperCase()}</span>
         </div>
         <div class="panel-hdr-right">
-          <span class="status-badge">WAITING...</span>
-          <input type="checkbox" class="answer-toggle" onclick="event.stopPropagation()">
+          <span class="status-badge" style="background:${cv}22;color:${cv};border-color:${cv}44">WAITING...</span>
+          <span class="icon panel-copy" style="font-size:14px;color:var(--text-muted)" 
+            onmouseenter="this.style.color='${cv}'" 
+            onmouseleave="this.style.color='var(--text-muted)'" 
+            onclick="copyResp(event,'${id}',${msgIdx})" title="Copy">content_copy</span>
         </div>
       </div>
-      <div class="panel-body">
-        <div class="panel-text">Processing...</div>
+      <div class="panel-body open" id="pbody-${msgIdx}-${id}">
+        <div class="panel-body-inner">
+          <div class="panel-text">Processing...</div>
+        </div>
       </div>`;
-    group.appendChild(detail);
+    wrap.appendChild(panel);
   });
   
+  group.appendChild(wrap);
   mc.appendChild(group);
   mc.scrollTop = mc.scrollHeight;
 }
 
+/**
+ * fillAnswers
+ * Injects content into panel-body-inner and updates status.
+ */
 function fillAnswers([modelName, content, id]) {
   const group = document.querySelector('.pending-group');
   if (!group) return;
 
-  const panels = group.querySelectorAll('.sl-details');
-  panels.forEach(p => {
-    if (p.querySelector('.model-name').innerText === modelName.toUpperCase()) {
-      p.querySelector('.panel-text').innerHTML = content;
-      p.querySelector('.status-badge').innerText = 'COMPLETE';
-      p.dataset.id = id;
-      p.querySelector('.answer-toggle').value = id;
-    }
-  });
+  const panel = group.querySelector(`[id$="-${modelName}"]`);
+  if (panel) {
+    const textDiv = panel.querySelector('.panel-text');
+    const badge = panel.querySelector('.status-badge');
+    
+    // content expected to be sanitized/formatted HTML string
+    textDiv.innerHTML = content;
+    badge.innerText = 'STREAMING_COMPLETE';
+    panel.dataset.dbid = id;
+  }
 
-  const stillWaiting = Array.from(panels).some(p => p.querySelector('.status-badge').innerText === 'WAITING...');
-  if (!stillWaiting) group.classList.remove('pending-group');
+  // Remove pending tag if all panels in this group finished
+  const waiting = group.querySelectorAll('.status-badge');
+  const allDone = Array.from(waiting).every(b => b.innerText !== 'WAITING...');
+  if (allDone) group.classList.remove('pending-group');
+}
+
+/**
+ * togglePanel
+ * Stateless toggle using classList and icon swap.
+ */
+function togglePanel(msgIdx, id) {
+  const panel = document.getElementById(`panel-${msgIdx}-${id}`);
+  const body = document.getElementById(`pbody-${msgIdx}-${id}`);
+  const arrow = panel.querySelector('.panel-arrow');
+  
+  const isCollapsed = panel.classList.toggle('collapsed');
+  body.classList.toggle('open', !isCollapsed);
+  
+  if (arrow) {
+    arrow.innerText = isCollapsed ? 'keyboard_arrow_right' : 'keyboard_arrow_down';
+  }
 }
 
 function clearChatContent() {
@@ -97,12 +147,22 @@ function escapeHtml(text) {
 
 /* ── MODEL SELECTION ── */
 
+/**
+ * createCheckboxFromModel
+ * adds 'disabled' class by default.
+ */
 function createCheckboxFromModel(aggregator, provider, id, name) {
   const list = document.getElementById('body-models');
+  if (!list) return;
+
   const item = document.createElement('div');
-  item.className = 'model-item';
+  // Logic: Add 'disabled' by default so user must opt-in
+  item.className = 'model-item disabled'; 
   item.dataset.id = id;
+  item.dataset.agg = aggregator;
+  item.dataset.prov = provider;
   item.onclick = () => toggleModel(id);
+  
   item.innerHTML = `
     <span class="model-dot" style="background:var(--primary)"></span>
     <span class="model-lbl">${escapeHtml(name)}</span>
@@ -110,9 +170,16 @@ function createCheckboxFromModel(aggregator, provider, id, name) {
   list.appendChild(item);
 }
 
+/**
+ * getSelectedModels
+ * returns only active (non-disabled) models.
+ */
 function getSelectedModels() {
-  return Array.from(document.querySelectorAll('.model-item:not(.disabled)')).map(el => ({
+  const activeNodes = document.querySelectorAll('.model-item:not(.disabled)');
+  return Array.from(activeNodes).map(el => ({
     id: el.dataset.id,
+    aggregator: el.dataset.agg,
+    provider: el.dataset.prov,
     name: el.querySelector('.model-lbl').innerText
   }));
 }

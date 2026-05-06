@@ -104,7 +104,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .sb-body { flex: 1; overflow-y: auto; min-width: 128px; }
 
 /* Section */
-.sec-divider { border-top: 1px solid rgba(30,41,59,.5); }
+.sec-divider { border-top: 1px solid rgba(30,41,59,.5);}
 .sec-hdr {
   display: flex; align-items: center; gap: 4px;
   padding: 6px 8px; color: var(--text-muted);
@@ -116,7 +116,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .sec-title { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .sec-badge { margin-left: auto; font-size: 9px; background: rgba(186,158,255,.15); color: var(--primary); border: 1px solid rgba(186,158,255,.3); padding: 1px 6px; font-family: var(--font-mono); }
 
-.sec-body { overflow: hidden; max-height: 0; opacity: 0; transition: max-height .22s cubic-bezier(.4,0,.2,1), opacity .18s ease; }
+.sec-body { overflow: scroll; max-height: 0; opacity: 0; transition: max-height .22s cubic-bezier(.4,0,.2,1), opacity .18s ease; }
 .sec-body.open { max-height: 500px; opacity: 1; }
 
 /* Chat item */
@@ -249,9 +249,9 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 
 /* Panel body */
 .panel-body { overflow: hidden; max-height: 0; opacity: 0; transition: max-height .25s cubic-bezier(.4,0,.2,1), opacity .2s ease; }
-.panel-body.open { max-height: 1200px; opacity: 1; }
+.panel-body.open { max-height: 100%; opacity: 1; }
 .panel-body-inner { padding: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px; }
-.panel-text { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+.panel-text { padding-left: 1%;font-size: 13px; color: var(--text-muted); line-height: 1.7; }
 .panel-text code { background: var(--bg-highest); padding: 1px 5px; font-family: var(--font-mono); font-size: 12px; }
 
 /* Code block */
