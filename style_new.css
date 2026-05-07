@@ -133,13 +133,10 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 /* Model item */
 .model-item { display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 24px; cursor: pointer; transition: background var(--tr); }
 .model-item:hover { background: var(--bg-high); }
-.model-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; transition: opacity var(--tr); }
+.model-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; transition: opacity var(--tr); background: var(--primary) }
 .model-lbl  { font-size: 11px; color: var(--text-muted); transition: color var(--tr), opacity var(--tr), text-decoration var(--tr); }
-.model-item[data-id="gpt4"]:hover   .model-lbl { color: var(--primary); }
-.model-item[data-id="claude"]:hover .model-lbl { color: var(--secondary); }
-.model-item[data-id="gemini"]:hover .model-lbl { color: var(--tertiary); }
-.model-item.disabled .model-dot { opacity: .2; }
-.model-item.disabled .model-lbl { opacity: .3; text-decoration: line-through; }
+.model-item.disabled .model-dot { opacity: .4; background: var(--secondary) }
+.model-item.disabled .model-lbl { opacity: .3; }
 
 /* Space / Tool items */
 .space-item, .tool-item {

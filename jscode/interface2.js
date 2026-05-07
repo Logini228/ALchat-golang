@@ -30,10 +30,10 @@ function createQuestion(s) {
 function createAnswers(ids) {
   const mc = document.getElementById('msg-container');
   const msgIdx = mc.querySelectorAll('.answer-container').length + 1;
-  
+
   const group = document.createElement('div');
   group.className = 'answer-container pending-group';
-  
+
   const wrap = document.createElement('div');
   wrap.className = 'responses-wrap';
 
@@ -41,11 +41,11 @@ function createAnswers(ids) {
     // Determine color variable based on common model keys
     const colorMap = { gpt4: 'primary', claude: 'secondary', gemini: 'tertiary' };
     const cv = `var(--${colorMap[id] || 'primary'})`;
-    
+
     const panel = document.createElement('div');
     panel.className = 'model-panel';
     panel.id = `panel-${msgIdx}-${id}`;
-    
+
     panel.innerHTML = `
       <div class="panel-hdr" onclick="togglePanel(${msgIdx},'${id}')">
         <div class="panel-hdr-left">
@@ -67,7 +67,7 @@ function createAnswers(ids) {
       </div>`;
     wrap.appendChild(panel);
   });
-  
+
   group.appendChild(wrap);
   mc.appendChild(group);
   mc.scrollTop = mc.scrollHeight;
@@ -85,7 +85,7 @@ function fillAnswers([modelName, content, id]) {
   if (panel) {
     const textDiv = panel.querySelector('.panel-text');
     const badge = panel.querySelector('.status-badge');
-    
+
     // content expected to be sanitized/formatted HTML string
     textDiv.innerHTML = content;
     badge.innerText = 'STREAMING_COMPLETE';
@@ -106,10 +106,10 @@ function togglePanel(msgIdx, id) {
   const panel = document.getElementById(`panel-${msgIdx}-${id}`);
   const body = document.getElementById(`pbody-${msgIdx}-${id}`);
   const arrow = panel.querySelector('.panel-arrow');
-  
+
   const isCollapsed = panel.classList.toggle('collapsed');
   body.classList.toggle('open', !isCollapsed);
-  
+
   if (arrow) {
     arrow.innerText = isCollapsed ? 'keyboard_arrow_right' : 'keyboard_arrow_down';
   }
@@ -151,20 +151,20 @@ function escapeHtml(text) {
  * createCheckboxFromModel
  * adds 'disabled' class by default.
  */
-function createCheckboxFromModel(aggregator, provider, id, name) {
+function createCheckboxFromModel(aggregator, provider, id, name, price, context, inputs, outputs) {
   const list = document.getElementById('body-models');
   if (!list) return;
 
   const item = document.createElement('div');
   // Logic: Add 'disabled' by default so user must opt-in
-  item.className = 'model-item disabled'; 
+  item.className = 'model-item disabled';
   item.dataset.id = id;
   item.dataset.agg = aggregator;
   item.dataset.prov = provider;
   item.onclick = () => toggleModel(id);
-  
+
   item.innerHTML = `
-    <span class="model-dot" style="background:var(--primary)"></span>
+    <span class="model-dot"></span>
     <span class="model-lbl">${escapeHtml(name)}</span>
   `;
   list.appendChild(item);
@@ -204,13 +204,6 @@ function toggleModel(id) {
   document.getElementById('active-lbl').textContent = active.join(' · ') || 'NONE';
 }
 
-function toggleStream() {
-  const el = document.getElementById('stream-toggle');
-  const isEnabled = el.innerText === 'ENABLED';
-  el.innerText = isEnabled ? 'DISABLED' : 'ENABLED';
-  el.style.color = isEnabled ? 'var(--text-muted)' : 'var(--tertiary)';
-}
-
 function autoResize() {
   const ta = document.getElementById('prompt-ta');
   ta.style.height = 'auto';
@@ -232,7 +225,7 @@ function sendQuery() {
   createQuestion(val);
   const selected = getSelectedModels().map(m => m.id);
   if (selected.length) createAnswers(selected);
-  
+
   ta.value = '';
   autoResize();
 }
@@ -246,14 +239,18 @@ handle.addEventListener('mousedown', () => {
     document.documentElement.style.setProperty('--sb-width', `${w}px`);
   };
   document.addEventListener('mousemove', onMove);
-  document.addEventListener('mouseup', () => document.removeEventListener('mousemove', onMove), {once:true});
+  document.addEventListener('mouseup', () => document.removeEventListener('mousemove', onMove), { once: true });
 });
+
 function clearModels() {
   const modelList = document.getElementById('body-models');
-  if (modelList) {
-    modelList.innerHTML = '';
-  }
+  if (!modelList) return;
+
+  const items = modelList.querySelectorAll(':scope > :not(.sb-search)');
+  
+  items.forEach(item => item.remove());
 }
+
 var textbox = document.getElementById('prompt-ta');
 var modelbox = document.getElementById('body-models');
 
@@ -280,7 +277,7 @@ function addNotification(message, type = 'info') {
 
   const item = document.createElement('div');
   item.className = 'notif-item';
-  
+
   // Set border color based on type
   const colorMap = {
     info: 'var(--secondary)',
@@ -348,7 +345,7 @@ function updateTokenCount(val) {
   // Approximate tokens: ~4 chars per token for English
   // Adjust logic if using specific Byte Pair Encoding (BPE)
   const tokenCount = Math.ceil(val.length / 4);
-  
+
   // Update the UI text
   counterEl.textContent = tokenCount.toLocaleString();
 
