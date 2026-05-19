@@ -17,16 +17,22 @@ async function handleChat() {
         await newChat()
     }
 
-    llmInput = document.getElementById("llm-input").value
+    const ta = document.getElementById('prompt-ta');
+    const llmInput = ta.value.trim();
+    if (!val) return;
+
     models = getSelectedModels()
+    if (models[0] == null) {warnToast("Please choose at least 1 model"); return};
+
     names = models.map(model => model.name);
     ids = models.map(model => model.id);
 
-    createQuestion(llmInput)
-    createAnswers(ids)
-    requestLLM(ids, llmInput)
+    createQuestion(llmInput);
+    createAnswers(ids);
+    requestLLM(ids, llmInput);
 
-    document.getElementById("llm-input").value = ""
+    document.getElementById('prompt-ta').value = "";
+    autoResize();
 }
 function logged(data) {
     document.getElementById('google-auth').style.display = 'none';

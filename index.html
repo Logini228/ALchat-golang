@@ -147,7 +147,7 @@
           <textarea id="prompt-ta" class="prompt-ta" rows="2" placeholder="Enter system instruction or query string..."
             oninput="updateTokenCount(this.value)" onkeydown="handleKeydown(event)"></textarea>
           <div class="prompt-actions">
-            <button class="btn btn-ask" id="ask-btn" onclick="sendQuery(event)">
+            <button class="btn btn-ask" id="ask-btn" onclick="handleChat(event)">
               <span>Ask All</span><span class="icon">send</span>
             </button>
             <button class="btn btn-sync" onclick="deploySync(event)">
@@ -188,7 +188,7 @@
   <!-- Toast -->
   <div id="toast"></div>
 
-  <script src="/jscode/interface2.js"></script>
+  <script src="/jscode/interface.js"></script>
   <script src="/jscode/requests.js"></script>
   <script src="/jscode/misc.js"></script>
   <script src="/jscode/handlers.js"></script>
