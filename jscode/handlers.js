@@ -19,7 +19,7 @@ async function handleChat() {
 
     const ta = document.getElementById('prompt-ta');
     const llmInput = ta.value.trim();
-    if (!val) return;
+    if (!llmInput) return;
 
     models = getSelectedModels()
     if (models[0] == null) {warnToast("Please choose at least 1 model"); return};
