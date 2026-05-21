@@ -1,3 +1,5 @@
+console.log("requests.js loaded")
+
 async function requestLLM(models, message) {
     try {
         const history = getHistory();

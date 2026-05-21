@@ -1,3 +1,5 @@
+console.log("misc.js loaded")
+
 function stylizeJson(text) {
     if (typeof text !== 'string') {
         text = String(text);
@@ -71,3 +73,4 @@ function stylizeJson(text) {
 
     return html;
 }
+

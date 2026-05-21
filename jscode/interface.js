@@ -1,3 +1,5 @@
+console.log("interface.js loaded")
+
 /* ── CORE FUNCTIONS ── */
 
 function getHistory() {
@@ -12,21 +14,22 @@ function getHistory() {
 function createQuestion(s) {
   const mc = document.getElementById('msg-container');
   const q = document.createElement('div');
-  q.className = 'question-box';
-  q.innerHTML = `<div class="user-bubble">${escapeHtml(s)}</div>`;
+  q.className = 'msg-in';
+  q.innerHTML = `
+    <div class="user-label">
+      <span class="icon">person</span> USER_QUERY
+      <div class="mini-switch on" onclick="this.classList.toggle('on')">
+        <div class="mini-switch-knob"></div>
+      </div>
+    </div>
+    <div class="user-bubble">
+      <p>${escapeHtml(s)}</p>
+    </div>
+  `;
   mc.appendChild(q);
   mc.scrollTop = mc.scrollHeight;
 }
-/**
- * createAnswers
- * Uses model-panel class. Default state is open (not collapsed).
- * Groups panels inside responses-wrap.
- */
-/**
- * createAnswers
- * Matches precise HTML structure: responses-wrap > model-panel.
- * IDs follow pattern: panel-[msgIdx]-[modelId].
- */
+
 function createAnswers(ids) {
   const mc = document.getElementById('msg-container');
   const msgIdx = mc.querySelectorAll('.answer-container').length + 1;
@@ -130,7 +133,7 @@ function renderChatList(data) {
     const item = document.createElement('div');
     item.className = 'chat-item';
     item.innerHTML = `<span class="icon">chat_bubble</span><span>${escapeHtml(name)}</span>`;
-    item.onclick = () => window.location.hash = id;
+    item.addEventListener('click', () => { handleChatlistClick(id); });
     list.appendChild(item);
   });
 }
@@ -216,6 +219,7 @@ function handleKeydown(e) {
     handleChat();
   }
 }
+
 
 /* ── RESIZING ── */
 const handle = document.getElementById('resize-handle');
