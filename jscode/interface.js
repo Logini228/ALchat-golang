@@ -3,18 +3,50 @@ console.log("interface.js loaded")
 /* ── CORE FUNCTIONS ── */
 
 function getHistory() {
-  const nodes = document.getElementById('msg-container').children;
-  return Array.from(nodes).map(node => {
-    const isId = node.classList.contains('answer-container');
-    const content = isId ? (node.dataset.id || "") : node.innerText.trim();
-    return [isId, content];
-  });
+  const history = [];
+  const innerBlock = document.getElementById('msg-container');
+  if (!innerBlock) return history;
+
+  const elements = innerBlock.children;
+
+  for (let el of elements) {
+    if (el.classList.contains('msg-in')) {
+      const toggle = el.querySelector('.mini-switch');
+
+      // FIX: Check classList instead of .checked
+      if (toggle && toggle.classList.contains('on')) {
+        const id = el.getAttribute('data-dbid');
+        const text = el.querySelector('.user-bubble').children[0]?.innerText || "";
+
+        if (id != "undefined") { history.push([true, id]); }
+        else { history.push([false, text]) }
+      }
+    }
+
+    else if (el.classList.contains('answer-container')) {
+      // NOTE: HTML have '.model-panel', not 'sl-details'
+      const allDetails = el.querySelectorAll('.model-panel');
+
+      allDetails.forEach(det => {
+        const detToggle = det.querySelector('.mini-switch');
+        const detId = det.getAttribute('data-dbid'); // HTML use id/data-dbid, not data-id
+
+        // FIX: Check classList instead of .checked
+        if (detToggle && detToggle.classList.contains('on') && detId) {
+          history.push([true, detId]);
+        }
+      });
+    }
+  };
+
+  return history;
 }
 
-function createQuestion(s) {
+function createQuestion(s, id) {
   const mc = document.getElementById('msg-container');
   const q = document.createElement('div');
   q.className = 'msg-in';
+  q.dataset.dbid = id
   q.innerHTML = `
     <div class="user-label">
       <span class="icon">person</span> USER_QUERY
@@ -32,38 +64,42 @@ function createQuestion(s) {
 
 function createAnswers(ids) {
   const mc = document.getElementById('msg-container');
-  const msgIdx = mc.querySelectorAll('.answer-container').length + 1;
+  if (!mc) return;
 
   const group = document.createElement('div');
   group.className = 'answer-container pending-group';
 
+  // Track structural index context to match streaming array slots directly
+  group.dataset.currentIndex = "0";
+  group.dataset.totalPanels = ids.length.toString();
+
   const wrap = document.createElement('div');
   wrap.className = 'responses-wrap';
 
-  ids.forEach(id => {
-    // Determine color variable based on common model keys
+  ids.forEach((id, index) => {
     const colorMap = { gpt4: 'primary', claude: 'secondary', gemini: 'tertiary' };
     const cv = `var(--${colorMap[id] || 'primary'})`;
 
     const panel = document.createElement('div');
-    panel.className = 'model-panel';
-    panel.id = `panel-${msgIdx}-${id}`;
+    panel.className = 'model-panel collapsed';
+
+    // Explicitly order panels numerically rather than by model name string signatures
+    panel.dataset.panelIndex = index.toString();
+    panel.dataset.modelKey = id;
 
     panel.innerHTML = `
-      <div class="panel-hdr" onclick="togglePanel(${msgIdx},'${id}')">
+      <div class="panel-hdr" onclick="togglePanel(this)">
         <div class="panel-hdr-left">
-          <span class="icon panel-arrow" style="color:${cv}">keyboard_arrow_down</span>
+          <span class="icon panel-arrow" style="color:${cv}">keyboard_arrow_right</span>
           <span class="panel-name" style="color:${cv}">${id.toUpperCase()}</span>
         </div>
         <div class="panel-hdr-right">
-          <span class="status-badge" style="background:${cv}22;color:${cv};border-color:${cv}44">WAITING...</span>
-          <span class="icon panel-copy" style="font-size:14px;color:var(--text-muted)" 
-            onmouseenter="this.style.color='${cv}'" 
-            onmouseleave="this.style.color='var(--text-muted)'" 
-            onclick="copyResp(event,'${id}',${msgIdx})" title="Copy">content_copy</span>
+          <span class="status-badge" style="background:var(--secondary)22;color:var(--secondary);border-color:var(--secondary)44">WAITING...</span>
+          <span class="icon panel-copy" style="font-size: 14px; color: var(--text-muted);" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color='var(--text-muted)'" onclick="copyResp(event,'${id}')" title="Copy">content_copy</span>
+          <div class="mini-switch on" onclick="event.stopPropagation();this.classList.toggle('on')" style="--sw-on:var(--primary)" title="Toggle response"><div class="mini-switch-knob"></div></div>
         </div>
       </div>
-      <div class="panel-body open" id="pbody-${msgIdx}-${id}">
+      <div class="panel-body">
         <div class="panel-body-inner">
           <div class="panel-text">Processing...</div>
         </div>
@@ -78,37 +114,69 @@ function createAnswers(ids) {
 
 /**
  * fillAnswers
- * Injects content into panel-body-inner and updates status.
+ * Matches targets sequentially based on structural execution index pointers
  */
 function fillAnswers([modelName, content, id]) {
+  // Always access the oldest unresolved active interface container first
   const group = document.querySelector('.pending-group');
   if (!group) return;
 
-  const panel = group.querySelector(`[id$="-${modelName}"]`);
-  if (panel) {
-    const textDiv = panel.querySelector('.panel-text');
-    const badge = panel.querySelector('.status-badge');
+  const currentIndexStr = group.dataset.currentIndex || "0";
+  const currentIndex = parseInt(currentIndexStr, 10);
 
-    // content expected to be sanitized/formatted HTML string
+  // Directly locate the exact target slot by its array index position
+  const panel = group.querySelector(`[data-panel-index="${currentIndex}"]`);
+  if (!panel) return;
+
+  const textDiv = panel.querySelector('.panel-text');
+  const badge = panel.querySelector('.status-badge');
+
+  if (textDiv && badge) {
     textDiv.innerHTML = content;
-    badge.innerText = 'STREAMING_COMPLETE';
+    badge.innerText = 'COMPLETE';
     panel.dataset.dbid = id;
+
+    // If the dynamic API response contains a specific model version name, preserve it
+    if (modelName) {
+      const nameSpan = panel.querySelector('.panel-name');
+      if (nameSpan) nameSpan.innerText = modelName.toUpperCase();
+    }
   }
 
-  // Remove pending tag if all panels in this group finished
-  const waiting = group.querySelectorAll('.status-badge');
-  const allDone = Array.from(waiting).every(b => b.innerText !== 'WAITING...');
-  if (allDone) group.classList.remove('pending-group');
+  // Advance execution pointer state to prepare for next chunk sequence item
+  const nextIndex = currentIndex + 1;
+  group.dataset.currentIndex = nextIndex.toString();
+
+  const totalPanels = parseInt(group.dataset.totalPanels || "0", 10);
+  if (nextIndex >= totalPanels) {
+    group.classList.remove('pending-group');
+  }
+}
+
+function fillQuestion(id) {
+  const elements = document.querySelectorAll('.msg-in[data-dbid="undefined"]');
+  if (elements.length === 0) return;
+
+  const lastElement = elements[elements.length - 1];
+  lastElement.setAttribute('data-dbid', id);
 }
 
 /**
  * togglePanel
  * Stateless toggle using classList and icon swap.
  */
-function togglePanel(msgIdx, id) {
-  const panel = document.getElementById(`panel-${msgIdx}-${id}`);
-  const body = document.getElementById(`pbody-${msgIdx}-${id}`);
+function togglePanel(headerElement) {
+  if (!headerElement) return;
+
+  // Find wrapper box containing header and body
+  const panel = headerElement.parentElement;
+  if (!panel) return;
+
+  // Find body inside wrapper box
+  const body = panel.querySelector('.panel-body');
   const arrow = panel.querySelector('.panel-arrow');
+
+  if (!body) return;
 
   const isCollapsed = panel.classList.toggle('collapsed');
   body.classList.toggle('open', !isCollapsed);
@@ -139,7 +207,8 @@ function renderChatList(data) {
 }
 
 function getChatIdFromURL() {
-  return window.location.hash.substring(1) || null;
+  const match = window.location.pathname.match(/\/chat\/(\w+)/);
+  return match ? match[1] : null;
 }
 
 function escapeHtml(text) {
@@ -238,7 +307,7 @@ function clearModels() {
   if (!modelList) return;
 
   const items = modelList.querySelectorAll(':scope > :not(.sb-search)');
-  
+
   items.forEach(item => item.remove());
 }
 

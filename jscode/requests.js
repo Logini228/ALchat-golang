@@ -37,6 +37,7 @@ async function requestLLM(models, message) {
                 if (line.trim()) {
                     try {
                         const data = JSON.parse(line);
+                        if (data.model == "prompt") {fillQuestion(data.mess_uuid); continue;}
                         fillAnswers([data.model, stylizeJson(data.response || ""), data.mess_uuid]);
                     } catch (e) {
                         console.error('Failed to parse line:', line, e);
@@ -95,7 +96,7 @@ function loadChat(id) {
 
             for (let i = 0; i < msgs.length; i++) {
                 if (msgs[i].sender_user == true) {
-                    createQuestion(msgs[i].message);
+                    createQuestion(msgs[i].message, msgs[i].mess_uuid);
 
                     let modelMessages = [];
                     let j = i + 1;
@@ -271,6 +272,7 @@ window.addEventListener('popstate', () => {
 
 window.addEventListener('load', () => {
     loadChat(getChatIdFromURL());
+    console.log("loaded: ", getChatIdFromURL())
 });
 
 function moveUserTo(chatid) {

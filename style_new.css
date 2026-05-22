@@ -137,8 +137,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .model-item:hover { background: var(--bg-high); }
 .model-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; transition: opacity var(--tr); background: var(--primary) }
 .model-lbl  { font-size: 11px; color: var(--text-muted); transition: color var(--tr), opacity var(--tr), text-decoration var(--tr); }
-.model-item.disabled .model-dot { opacity: .4; background: var(--secondary) }
-.model-item.disabled .model-lbl { opacity: .3; }
+.model-item.disabled .model-dot { opacity: .9; background: var(--secondary) }
+.model-item.disabled .model-lbl { opacity: .9; }
 
 /* Space / Tool items */
 .space-item, .tool-item {
@@ -223,6 +223,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 /* User message */
 .user-label { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 6px; }
 .user-label .icon { font-size: 12px; }
+.user-label .mini-switch { margin-left: auto; }
 .user-bubble { background: var(--bg-mid); border-left: 2px solid var(--primary-dim); padding: 14px 16px; }
 .user-bubble p { font-family: var(--font-mono); font-size: 13px; color: var(--text); line-height: 1.65; }
 
@@ -269,6 +270,33 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .syn-kw  { color: var(--secondary); }
 .syn-fn  { color: var(--primary); }
 .syn-cmt { color: var(--tertiary); }
+
+/* ── MINI SWITCH ────────────────────────────────────────────── */
+.mini-switch {
+  display: inline-flex; align-items: center;
+  width: 28px; height: 15px;
+  border-radius: 999px;
+  background: var(--bg-highest);
+  border: 1px solid var(--outline);
+  position: relative; cursor: pointer;
+  flex-shrink: 0;
+  transition: background .2s, border-color .2s;
+}
+.mini-switch.on {
+  background: rgba(186,158,255,.12);
+  border-color: var(--sw-on, var(--primary));
+}
+.mini-switch-knob {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--outline-dim);
+  position: absolute; left: 2px;
+  transition: left .18s ease, background .18s;
+}
+.mini-switch.on .mini-switch-knob {
+  left: 15px;
+  background: var(--sw-on, var(--primary));
+}
 
 /* ── PROMPT BAR ─────────────────────────────────────────────── */
 #prompt-bar { background: var(--bg-low); border-top: 1px solid var(--border); padding: 13px 16px; display: flex; flex-direction: column; gap: 10px; }

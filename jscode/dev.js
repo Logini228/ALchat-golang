@@ -1,17 +1,17 @@
 function getHistory() {
     const history = [];
-    const innerBlock = document.querySelector('.inner-block');
+    const innerBlock = document.getElementById('msg-container');
     if (!innerBlock) return history;
 
     const elements = innerBlock.children;
 
     for (let el of elements) {
-        if (el.classList.contains('question-box')) {
-            const toggle = el.querySelector('.answer-toggle');
+        if (el.classList.contains('msg-in')) {
+            const toggle = el.querySelector('.mini-switch');
 
             if (toggle && toggle.checked) {
                 const id = el.getAttribute('data-id');
-                const text = el.querySelector('.question-text')?.innerText || "";
+                const text = el.querySelector('.user-bubble').children[0]?.innerText || "";
 
                 if (id) { history.push([true, id]); }
                 else { history.push([false, text]) }
@@ -22,7 +22,7 @@ function getHistory() {
             const allDetails = el.querySelectorAll('sl-details');
 
             allDetails.forEach(det => {
-                const detToggle = det.querySelector('.answer-toggle');
+                const detToggle = det.querySelector('.mini-switch');
                 const detId = det.getAttribute('data-id');
 
                 if (detToggle && detToggle.checked && detId) {
