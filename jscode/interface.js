@@ -195,13 +195,16 @@ function getSelectedAnswerIds() {
 }
 
 function renderChatList(data) {
+  const currentChatId = getChatIdFromURL(); 
   const list = document.getElementById('chat-list');
   list.innerHTML = '';
+  
   data.forEach(([id, name]) => {
     const item = document.createElement('div');
-    item.className = 'chat-item';
+    const isActive = (id == currentChatId);
+    item.className = `chat-item ${isActive ? 'active' : ''}`;
     item.innerHTML = `<span class="icon">chat_bubble</span><span>${escapeHtml(name)}</span>`;
-    item.addEventListener('click', () => { handleChatlistClick(id); });
+    item.addEventListener('click', () => { handleChatlistClick(id, data); });
     list.appendChild(item);
   });
 }

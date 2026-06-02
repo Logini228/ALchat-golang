@@ -47,11 +47,14 @@ function logged(data) {
     }
 }
 
-function handleChatlistClick(id) {
-    clearChatContent()
-    moveUserTo(id)
-    loadChat(id)
-    return true
+function handleChatlistClick(id, data) {
+    clearChatContent();
+    moveUserTo(id); // Assumed to update URL string
+    loadChat(id);
+    
+    // Re-render immediately using passed data array
+    renderChatList(data); 
+    return true;
 }
 
 function handleSearchModel(val) {
