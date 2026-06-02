@@ -279,6 +279,11 @@ function moveUserTo(chatid) {
     window.history.pushState({}, "", `/chat/${chatid}`);
     return true;
 }
+
+function moveUserHome() {
+    window.history.pushState({}, "", "/");
+    return true;
+}
  
 /* traditional login. Maybe I'll get back to it in the future
 

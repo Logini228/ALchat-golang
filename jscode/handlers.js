@@ -8,6 +8,7 @@ window.onload = async function () {
     if (loginJWT()) {
         const chats = await loadChatList(); 
         renderChatList(chats);
+        loadChat()
     }
 };
 
@@ -69,4 +70,10 @@ function handleSearchModel(val) {
       item.style.display = 'none';
     }
   });
+}
+
+function newChat(){
+    clearChatContent()
+    moveUserHome()
+    return true
 }
