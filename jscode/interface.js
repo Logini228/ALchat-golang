@@ -199,14 +199,16 @@ function renderChatList(data) {
   const list = document.getElementById('chat-list');
   list.innerHTML = '';
   
-  data.forEach(([id, name]) => {
+for (const [id, name] of data) {
+    if (name === "") { continue; } // Works perfect here
+    
     const item = document.createElement('div');
     const isActive = (id == currentChatId);
     item.className = `chat-item ${isActive ? 'active' : ''}`;
     item.innerHTML = `<span class="icon">chat_bubble</span><span>${escapeHtml(name)}</span>`;
     item.addEventListener('click', () => { handleChatlistClick(id, data); });
     list.appendChild(item);
-  });
+  }
 }
 
 function getChatIdFromURL() {
@@ -454,4 +456,59 @@ function updateTokenCount(val) {
   } else {
     counterEl.style.color = 'inherit';
   }
+}
+
+var loggud = false;
+
+var userName = "User"; // Placeholder name for toast
+var userAvatar = null; // Test placeholder styling
+
+function renderFooter() {
+  const footer = document.getElementById('sb-footer');
+  if (loggud) {
+    const avatarHtml = userAvatar
+      ? `<img class="footer-avatar" src="${userAvatar}" alt="${userName}"/>`
+      : `<div class="footer-avatar-placeholder" style="width:20px;height:20px;border-radius:50%;background-color:var(--primary);display:inline-block;vertical-align:middle;"></div>`;
+    footer.innerHTML = `
+      <div class="footer-user">
+        <div class="footer-user-info">
+          ${avatarHtml}
+          <span class="footer-username">${userName}</span>
+        </div>
+        <div class="notif-wrap">
+          <span class="icon" style="font-size:20px;cursor:pointer;transition:color var(--tr)" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color=''" onclick="toggleNotifPanel()">notifications</span>
+          <span class="notif-badge" id="notif-badge">2</span>
+        </div>
+        <span class="icon" style="font-size:20px;cursor:pointer;transition:color var(--tr);margin-left:6px" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color=''" onclick="showToast('Settings — coming soon')">settings</span>
+        <span class="icon" style="font-size:20px;cursor:pointer;transition:color var(--tr);margin-left:6px" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color=''" onclick="handleLogout()">logout</span>
+      </div>`;
+  } else {
+    footer.innerHTML = `
+      <div class="footer-auth">
+        <span class="footer-auth-label">Sign in to save chats and sync across devices.</span>
+        <button class="btn-google" onclick="handleGoogleAuth()">
+          <svg width="14" height="14" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>`;
+  }
+}
+
+function handleGoogleAuth() {
+  signInWithGoogle()
+}
+
+function handleLogout() {
+  CookieStoreManager.removeItem('longJWT');
+  localStorage.removeItem('shortJWT');
+  clearChatContent();
+  moveUserHome();
+  loggud = false;
+  renderFooter();
+  infoToast('Logged out successfully');
 }

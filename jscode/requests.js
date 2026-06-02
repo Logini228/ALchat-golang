@@ -162,7 +162,7 @@ function signInWithGoogle() {
                     .then(d => {
                         const parsed = typeof d === 'string' ? JSON.parse(d) : d;
                         if (parsed.status === "Login success") {
-                            successToast("login success");
+                            successToast("login success as" + userName);
                             loginJWT();
                         }
                     });
@@ -192,6 +192,7 @@ async function loginJWT() {
         console.log('Auth success:', data.status);
 
         logged(data)
+        
 
         return true;
     } catch (err) {

@@ -7,9 +7,10 @@ window.onload = async function () {
     requestModels();
     if (loginJWT()) {
         const chats = await loadChatList(); 
-        renderChatList(chats);
-        loadChat()
+        await renderChatList(chats);
+        await loadChat()
     }
+    renderFooter();
 };
 
 async function handleChat() {
@@ -36,15 +37,14 @@ async function handleChat() {
     autoResize();
 }
 function logged(data) {
-    document.getElementById('google-auth').style.display = 'none';
+    loggud = true
 
-    document.getElementById('name').style.display = 'content';
-    document.getElementById('name').textContent = data.name;
+    userName = data.name;
 
     if (data.avatar) {
-        document.getElementById('avatar').style.display = 'content';
-        document.getElementById('avatar').src = data.avatar;
+        userAvatar = data.avatar;
     }
+    renderFooter()
 }
 
 function handleChatlistClick(id, data) {
