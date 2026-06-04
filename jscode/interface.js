@@ -510,5 +510,5 @@ function handleLogout() {
   moveUserHome();
   loggud = false;
   renderFooter();
-  infoToast('Logged out successfully');
+  infoToast('Logout is WIP, reload the page');
 }
