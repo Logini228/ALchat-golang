@@ -504,7 +504,7 @@ function handleGoogleAuth() {
 }
 
 function handleLogout() {
-  CookieStoreManager.removeItem('longJWT');
+  //CookieStoreManager.removeItem('longJWT');
   localStorage.removeItem('shortJWT');
   clearChatContent();
   moveUserHome();

@@ -2,11 +2,15 @@ package gocode
 
 import (
 	"aichat/gologs"
+	_ "embed"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
+
+//go:embed schema.sql
+var databaseSchema string
 
 var db *sqlx.DB
 var user, password, dbname, host, port string
@@ -16,15 +20,30 @@ func DBconnect() {
 		user, password, dbname, host, port)
 
 	var err error
-	// sqlx.Connect does Open and Ping in one go
 	db, err = sqlx.Connect("postgres", connStr)
-
 	if err != nil {
 		gologs.Error.Println("Failed to connect to database:", err)
 		return
 	}
 
-	gologs.Info.Println("Successfully connected to the database with sqlx!")
+	gologs.Info.Println("Successfully connected to the database root with sqlx!")
+
+	_, err = db.Exec("CREATE SCHEMA IF NOT EXISTS chat_app;")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize chat_app schema envelope: %v", err))
+	}
+
+	_, err = db.Exec("SET search_path TO chat_app;")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to set search path target: %v", err))
+	}
+
+	_, err = db.Exec(databaseSchema)
+	if err != nil {
+		panic(fmt.Sprintf("Automated database schema migration crashed: %v", err))
+	}
+
+	gologs.Info.Println("Database schema synchronized successfully!")
 }
 
 func CloseDB() {

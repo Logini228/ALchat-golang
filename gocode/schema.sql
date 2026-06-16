@@ -1,14 +1,20 @@
 -- schema.sql
 -- psql -h 127.0.0.1 -U postgresuser -d postgresdb -f schema.sql
 
-DROP SCHEMA IF EXISTS chat_app CASCADE;
-CREATE SCHEMA chat_app;
+CREATE IF NOT EXISTS SCHEMA chat_app;
 
 SET search_path TO chat_app;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS db_version_history (
+    id SERIAL PRIMARY KEY,
+    version TEXT NOT NULL, -- Format 'X.Y.Z'
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS users (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT,
@@ -18,13 +24,13 @@ CREATE TABLE users (
     jtis TEXT[]
 );
 
-CREATE TABLE chat (
+CREATE TABLE IF NOT EXISTS chat (
     chatid TEXT PRIMARY KEY,
     chatname TEXT DEFAULT 'chat',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE chat_members (
+CREATE TABLE IF NOT EXISTS chat_members (
     PRIMARY KEY (uuid, chatid),
     uuid UUID NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
     chatid TEXT NOT NULL REFERENCES chat(chatid) ON DELETE CASCADE,
@@ -33,7 +39,7 @@ CREATE TABLE chat_members (
 
 CREATE INDEX idx_members_user_uuid ON chat_members(uuid);
 
-CREATE TABLE message (
+CREATE TABLE IF NOT EXISTS message (
     id SERIAL PRIMARY KEY,
     chatid TEXT NOT NULL REFERENCES chat(chatid) ON DELETE CASCADE,
     sender TEXT NOT NULL,
@@ -45,7 +51,7 @@ CREATE TABLE message (
 
 CREATE INDEX idx_message_chatid ON message(chatid);
 
-CREATE TABLE models (
+CREATE TABLE IF NOT EXISTS models (
     aggregator TEXT NOT NULL,
     provider TEXT NOT NULL,
     id TEXT PRIMARY KEY,
@@ -57,3 +63,4 @@ CREATE TABLE models (
     outputs TEXT[] NOT NULL,
     original JSONB NOT NULL DEFAULT '{}'
 );
+

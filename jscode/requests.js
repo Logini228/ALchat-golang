@@ -5,7 +5,7 @@ async function requestLLM(models, message) {
         const history = getHistory();
         const empty = (history.length === 0);
 
-        const response = await fetch("http://localhost:8080/chat", {
+        const response = await fetch("/api/chat", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -63,7 +63,7 @@ async function requestLLM(models, message) {
 }
 async function loadChatList() {
     try {
-        const response = await fetch('http://localhost:8080/chatlist', {
+        const response = await fetch('/api/chatlist', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ async function loadChatList() {
 function loadChat(id) {
     if (!id) return;
 
-    fetch(`http://localhost:8080/chat/${id}`, { credentials: 'include' })
+    fetch(`/api/chat/${id}`, { credentials: 'include' })
         .then(response => response.json())
         .then(data => {
             if (!data.valid || !Array.isArray(data.messages)) return;
@@ -121,7 +121,7 @@ function loadChat(id) {
         .catch(error => console.error("Fetch error:", error));
 }
 async function newChat() {
-    const response = await fetch('http://localhost:8080/newchat', { method: 'POST', credentials: "include" });
+    const response = await fetch('/api/newchat', { method: 'POST', credentials: "include" });
     const data = await response.json();
 
     chatid = data.chatid;
@@ -153,7 +153,7 @@ function signInWithGoogle() {
                 popup.close();
                 clearInterval(timer);
                 if (!code) return errorToast("auth fail");
-                fetch('http://localhost:8080/auth', {
+                fetch('/api/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-authtype': 'google' },
                     credentials: 'include',
@@ -172,7 +172,7 @@ function signInWithGoogle() {
 };
 async function loginJWT() {
     try {
-        const response = await fetch('http://localhost:8080/auth', {
+        const response = await fetch('/api/auth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -203,7 +203,7 @@ async function loginJWT() {
 
 async function refreshJWT() {
     try {
-        const response = await fetch('http://localhost:8080/auth', {
+        const response = await fetch('/api/auth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -234,12 +234,12 @@ function onSubmit(token) {
 } // Recaptcha
 
 const CLIENT_ID = '310803326430-1kp91brnc26sg0s2ioai89hr3fipjren.apps.googleusercontent.com';
-const REDIRECT_URI = 'http://localhost:3000';
+const REDIRECT_URI = 'https://allchat.voropai.com';
 
 function requestModels() {
     clearModels();
 
-    fetch("http://127.0.0.1:8080/models", {
+    fetch("/api/models", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
