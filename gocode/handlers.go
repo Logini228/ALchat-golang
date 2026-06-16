@@ -73,11 +73,13 @@ func GetMessagesForChat(c *gin.Context) {
 }
 
 func AskLLM(c *gin.Context) {
+	save := true
 	shortToken, _ := c.Cookie("shortJWT")
 	valid, userUUID, _ := ParseJWT(shortToken, false)
 	if !valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized"})
-		return
+		//c.JSON(http.StatusUnauthorized, gin.H{"status": "Unauthorized"})
+		//return
+		save = false
 	}
 
 	bodyBytes, _ := io.ReadAll(c.Request.Body)
@@ -91,7 +93,11 @@ func AskLLM(c *gin.Context) {
 		gjson.Get(body, "empty").Bool(),
 	)
 
-	mess_uuid := InsertChatData(chatid, userUUID, true, reqPrompt)
+	mess_uuid := "undefined"
+
+	if save {
+		mess_uuid = InsertChatData(chatid, userUUID, true, reqPrompt)
+	}
 
 	c.Header("Content-Type", "application/x-ndjson")
 	streamModelResponses(c, chatid, gjson.Get(body, "model").Array(), messages, mess_uuid)
@@ -271,7 +277,7 @@ func GetModelsFromDB(c *gin.Context) {
 		return
 	}
 
-	models, err := QueryModels(body.Input)
+	models, err := QueryModels("free")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		gologs.Error.Printf("getmodels failed: %v", err)

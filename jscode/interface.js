@@ -1,346 +1,514 @@
+console.log("interface.js loaded")
+
+/* ── CORE FUNCTIONS ── */
+
 function getHistory() {
-    const history = [];
-    const innerBlock = document.querySelector('.inner-block');
-    if (!innerBlock) return history;
+  const history = [];
+  const innerBlock = document.getElementById('msg-container');
+  if (!innerBlock) return history;
 
-    const elements = innerBlock.children;
+  const elements = innerBlock.children;
 
-    for (let el of elements) {
-        if (el.classList.contains('question-box')) {
-            const toggle = el.querySelector('.answer-toggle');
+  for (let el of elements) {
+    if (el.classList.contains('msg-in')) {
+      const toggle = el.querySelector('.mini-switch');
 
-            if (toggle && toggle.checked) {
-                const id = el.getAttribute('data-id');
-                const text = el.querySelector('.question-text')?.innerText || "";
+      // FIX: Check classList instead of .checked
+      if (toggle && toggle.classList.contains('on')) {
+        const id = el.getAttribute('data-dbid');
+        const text = el.querySelector('.user-bubble').children[0]?.innerText || "";
 
-                if (id) { history.push([true, id]); }
-                else { history.push([false, text]) }
-            }
+        if (id != "undefined") { history.push([true, id]); }
+        else { history.push([false, text]) }
+      }
+    }
+
+    else if (el.classList.contains('answer-container')) {
+      // NOTE: HTML have '.model-panel', not 'sl-details'
+      const allDetails = el.querySelectorAll('.model-panel');
+
+      allDetails.forEach(det => {
+        const detToggle = det.querySelector('.mini-switch');
+        const detId = det.getAttribute('data-dbid'); // HTML use id/data-dbid, not data-id
+
+        // FIX: Check classList instead of .checked
+        if (detToggle && detToggle.classList.contains('on') && detId) {
+          history.push([true, detId]);
         }
+      });
+    }
+  };
 
-        else if (el.classList.contains('answer-container')) {
-            const allDetails = el.querySelectorAll('sl-details');
-
-            allDetails.forEach(det => {
-                const detToggle = det.querySelector('.answer-toggle');
-                const detId = det.getAttribute('data-id');
-
-                if (detToggle && detToggle.checked && detId) {
-                    history.push([true, detId]);
-                }
-            });
-        }
-    };
-
-    return history;
+  return history;
 }
-var textbox = document.getElementById('mytextbox');
-var modelbox = document.getElementById('modelbox');
 
-
-
-function createQuestion(s) {
-    const innerBlock = document.querySelector('.inner-block');
-    const newDiv = document.createElement('div');
-    newDiv.className = 'question-box'; // fillAnswers looks for this class
-    newDiv.innerHTML = `
-        <div class="question-header" style="display:flex; justify-content:flex-end;">
-            <sl-switch class="answer-toggle" checked size="small"></sl-switch>
-        </div>
-        <p class="question-text">${s}</p>
-    `;
-    innerBlock.appendChild(newDiv);
+function createQuestion(s, id) {
+  const mc = document.getElementById('msg-container');
+  const q = document.createElement('div');
+  q.className = 'msg-in';
+  q.dataset.dbid = id
+  q.innerHTML = `
+    <div class="user-label">
+      <span class="icon">person</span> USER_QUERY
+      <div class="mini-switch on" onclick="this.classList.toggle('on')">
+        <div class="mini-switch-knob"></div>
+      </div>
+    </div>
+    <div class="user-bubble">
+      <p>${escapeHtml(s)}</p>
+    </div>
+  `;
+  mc.appendChild(q);
+  mc.scrollTop = mc.scrollHeight;
 }
 
 function createAnswers(ids) {
-    const innerBlock = document.querySelector('.inner-block');
-    const container = document.createElement('div');
-    container.className = 'answer-container pending-group'; // Mark this group
+  const mc = document.getElementById('msg-container');
+  if (!mc) return;
 
-    ids.forEach(() => {
-        const el = document.createElement('sl-details');
-        el.disabled = true;
-        el.innerHTML = `<div slot="summary" class="model-name">Waiting for response...</div>`;
-        container.appendChild(el);
-    });
+  const group = document.createElement('div');
+  group.className = 'answer-container pending-group';
 
-    innerBlock.appendChild(container);
+  // Track structural index context to match streaming array slots directly
+  group.dataset.currentIndex = "0";
+  group.dataset.totalPanels = ids.length.toString();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'responses-wrap';
+
+  ids.forEach((id, index) => {
+    const colorMap = { gpt4: 'primary', claude: 'secondary', gemini: 'tertiary' };
+    const cv = `var(--${colorMap[id] || 'primary'})`;
+
+    const panel = document.createElement('div');
+    panel.className = 'model-panel collapsed';
+
+    // Explicitly order panels numerically rather than by model name string signatures
+    panel.dataset.panelIndex = index.toString();
+    panel.dataset.modelKey = id;
+
+    panel.innerHTML = `
+      <div class="panel-hdr" onclick="togglePanel(this)">
+        <div class="panel-hdr-left">
+          <span class="icon panel-arrow" style="color:${cv}">keyboard_arrow_right</span>
+          <span class="panel-name" style="color:${cv}">${id.toUpperCase()}</span>
+        </div>
+        <div class="panel-hdr-right">
+          <span class="status-badge" style="background:var(--secondary)22;color:var(--secondary);border-color:var(--secondary)44">WAITING...</span>
+          <span class="icon panel-copy" style="font-size: 14px; color: var(--text-muted);" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color='var(--text-muted)'" onclick="copyResp(event,'${id}')" title="Copy">content_copy</span>
+          <div class="mini-switch on" onclick="event.stopPropagation();this.classList.toggle('on')" style="--sw-on:var(--primary)" title="Toggle response"><div class="mini-switch-knob"></div></div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-body-inner">
+          <div class="panel-text">Processing...</div>
+        </div>
+      </div>`;
+    wrap.appendChild(panel);
+  });
+
+  group.appendChild(wrap);
+  mc.appendChild(group);
+  mc.scrollTop = mc.scrollHeight;
 }
 
+/**
+ * fillAnswers
+ * Matches targets sequentially based on structural execution index pointers
+ */
 function fillAnswers([modelName, content, id]) {
-    if (modelName === "prompt") {
-        const questions = document.querySelectorAll('.question-box');
-        const latestQuestion = questions[questions.length - 1];
-        latestQuestion.setAttribute('data-id', id);
-        return;
+  // Always access the oldest unresolved active interface container first
+  const group = document.querySelector('.pending-group');
+  if (!group) return;
+
+  const currentIndexStr = group.dataset.currentIndex || "0";
+  const currentIndex = parseInt(currentIndexStr, 10);
+
+  // Directly locate the exact target slot by its array index position
+  const panel = group.querySelector(`[data-panel-index="${currentIndex}"]`);
+  if (!panel) return;
+
+  const textDiv = panel.querySelector('.panel-text');
+  const badge = panel.querySelector('.status-badge');
+
+  if (textDiv && badge) {
+    textDiv.innerHTML = content;
+    badge.innerText = 'COMPLETE';
+    panel.dataset.dbid = id;
+
+    // If the dynamic API response contains a specific model version name, preserve it
+    if (modelName) {
+      const nameSpan = panel.querySelector('.panel-name');
+      if (nameSpan) nameSpan.innerText = modelName.toUpperCase();
     }
+  }
 
-    const pendingGroups = document.querySelectorAll('.pending-group');
-    if (!pendingGroups.length) return;
+  // Advance execution pointer state to prepare for next chunk sequence item
+  const nextIndex = currentIndex + 1;
+  group.dataset.currentIndex = nextIndex.toString();
 
-    const latestGroup = pendingGroups[pendingGroups.length - 1];
-    const targetElement = Array.from(latestGroup.querySelectorAll('sl-details')).find(el => el.disabled);
-
-    if (targetElement) {
-        targetElement.setAttribute('data-id', id);
-
-        const summaryName = targetElement.querySelector('.model-name');
-        summaryName.textContent = modelName;
-
-        const errorMsgs = ['Provider returned error', 'No endpoints available'];
-        if (errorMsgs.some(msg => content.includes(msg))) {
-            summaryName.innerHTML += ' <sl-tag variant="danger" size="small">error</sl-tag>';
-            const toggle = targetElement.querySelector('.answer-toggle');
-            if (toggle) toggle.checked = false;
-        }
-
-        const contentWrapper = document.createElement('div');
-        contentWrapper.innerHTML = content;
-        targetElement.appendChild(contentWrapper);
-
-        targetElement.disabled = false;
-    }
+  const totalPanels = parseInt(group.dataset.totalPanels || "0", 10);
+  if (nextIndex >= totalPanels) {
+    group.classList.remove('pending-group');
+  }
 }
 
+function fillQuestion(id) {
+  const elements = document.querySelectorAll('.msg-in[data-dbid="undefined"]');
+  if (elements.length === 0) return;
+
+  const lastElement = elements[elements.length - 1];
+  lastElement.setAttribute('data-dbid', id);
+}
+
+/**
+ * togglePanel
+ * Stateless toggle using classList and icon swap.
+ */
+function togglePanel(headerElement) {
+  if (!headerElement) return;
+
+  // Find wrapper box containing header and body
+  const panel = headerElement.parentElement;
+  if (!panel) return;
+
+  // Find body inside wrapper box
+  const body = panel.querySelector('.panel-body');
+  const arrow = panel.querySelector('.panel-arrow');
+
+  if (!body) return;
+
+  const isCollapsed = panel.classList.toggle('collapsed');
+  body.classList.toggle('open', !isCollapsed);
+
+  if (arrow) {
+    arrow.innerText = isCollapsed ? 'keyboard_arrow_right' : 'keyboard_arrow_down';
+  }
+}
 
 function clearChatContent() {
-    const innerBlock = document.querySelector('.inner-block');
-    if (innerBlock) {
-        innerBlock.innerHTML = '';
-    } else {
-        warnToast("Couldn't clear chat dialogue: Container .inner-block not found.");
-    }
-}
-
-function fillAnswers([modelName, content, id]) {
-    const allDetails = document.querySelectorAll('sl-details');
-    let targetElement = null;
-
-    for (let i = allDetails.length - 1; i >= 0; i--) {
-        const nameEl = allDetails[i].querySelector('.model-name');
-        if (nameEl && nameEl.textContent === modelName) {
-            targetElement = allDetails[i];
-            break;
-        }
-    }
-
-    if (targetElement) {
-        if (id) targetElement.setAttribute('data-id', id);
-
-        if (modelName !== "prompt") {
-            const contentWrapper = document.createElement('div');
-            contentWrapper.innerHTML = content;
-            targetElement.appendChild(contentWrapper);
-        }
-
-        targetElement.disabled = false;
-
-        if (content.includes('error') || content.includes('No endpoints available')) {
-            const nameEl = targetElement.querySelector('.model-name');
-            nameEl.innerHTML += ' <sl-tag variant="danger" size="small">error</sl-tag>';
-            const toggle = targetElement.querySelector('.answer-toggle');
-            if (toggle) toggle.checked = false;
-        }
-    }
+  document.getElementById('msg-container').innerHTML = '';
 }
 
 function getSelectedAnswerIds() {
-    const activeIds = [];
-    const allDetails = document.querySelectorAll('sl-details[data-id]');
-
-    allDetails.forEach(el => {
-        const toggle = el.querySelector('.answer-toggle');
-        if (toggle && toggle.checked) {
-            activeIds.push(el.getAttribute('data-id'));
-        }
-    });
-
-    return activeIds;
+  return Array.from(document.querySelectorAll('.answer-toggle:checked')).map(el => el.value);
 }
 
-
-
 function renderChatList(data) {
-    const container = document.querySelector('.chat-list');
-
-    // Clear existing items if necessary
-    container.innerHTML = '';
-
-    // data is [[id, name], [id, name]]
-    data.forEach(([id, name]) => {
-        const btn = document.createElement('sl-button');
-        btn.setAttribute('variant', 'default');
-        btn.id = id;
-        btn.textContent = name;
-        btn.addEventListener('click', () => { handleChatlistClick(id); });
-        container.appendChild(btn);
-    });
+  const currentChatId = getChatIdFromURL(); 
+  const list = document.getElementById('chat-list');
+  list.innerHTML = '';
+  
+for (const [id, name] of data) {
+    if (name === "") { continue; } // Works perfect here
+    
+    const item = document.createElement('div');
+    const isActive = (id == currentChatId);
+    item.className = `chat-item ${isActive ? 'active' : ''}`;
+    item.innerHTML = `<span class="icon">chat_bubble</span><span>${escapeHtml(name)}</span>`;
+    item.addEventListener('click', () => { handleChatlistClick(id, data); });
+    list.appendChild(item);
+  }
 }
 
 function getChatIdFromURL() {
-    const match = window.location.pathname.match(/\/chat\/(\w+)/);
-    return match ? match[1] : null;
+  const match = window.location.pathname.match(/\/chat\/(\w+)/);
+  return match ? match[1] : null;
 }
 
-// Helper function to escape HTML in code blocks
 function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m]);
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
-var counter = 0;
-var modelbox = document.querySelector('.models-input');
+/* ── MODEL SELECTION ── */
 
-
+/**
+ * createCheckboxFromModel
+ * adds 'disabled' class by default.
+ */
 function createCheckboxFromModel(aggregator, provider, id, name, price, context, inputs, outputs) {
-    const checkboxList = document.querySelector('.checkbox-list');
+  const list = document.getElementById('body-models');
+  if (!list) return;
 
-    const newDiv = document.createElement('div');
-    newDiv.className = 'checkbox-item';
+  const item = document.createElement('div');
+  // Logic: Add 'disabled' by default so user must opt-in
+  item.className = 'model-item disabled';
+  item.dataset.id = id;
+  item.dataset.agg = aggregator;
+  item.dataset.prov = provider;
+  item.onclick = () => toggleModel(id);
 
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = 'model-' + counter;
-    checkbox.value = id;
-    checkbox.dataset.aggregator = aggregator;
-    checkbox.dataset.provider = provider;
-    checkbox.dataset.name = name;
-
-    const label = document.createElement('label');
-    label.htmlFor = 'model-' + counter;
-    label.textContent = name;
-
-    newDiv.appendChild(checkbox);
-    newDiv.appendChild(label);
-    checkboxList.appendChild(newDiv);
-
-    counter++;
+  item.innerHTML = `
+    <span class="model-dot"></span>
+    <span class="model-lbl">${escapeHtml(name)}</span>
+  `;
+  list.appendChild(item);
 }
 
-function deleteModels() {
-    const checkboxList = document.querySelector('.checkbox-list');
-    const checkboxItems = checkboxList.querySelectorAll('.checkbox-item');
-
-    // Remove only unchecked items
-    checkboxItems.forEach(item => {
-        const checkbox = item.querySelector('input[type="checkbox"]');
-        if (!checkbox.checked) {
-            item.remove();
-        }
-    });
-}
-
+/**
+ * getSelectedModels
+ * returns only active (non-disabled) models.
+ */
 function getSelectedModels() {
-    const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]:checked');
-    const selectedModels = [];
-
-    checkboxes.forEach(checkbox => {
-        selectedModels.push({
-            aggregator: checkbox.dataset.aggregator,
-            provider: checkbox.dataset.provider,
-            id: checkbox.value,
-            name: checkbox.dataset.name
-        });
-    });
-
-    return selectedModels;
+  const activeNodes = document.querySelectorAll('.model-item:not(.disabled)');
+  return Array.from(activeNodes).map(el => ({
+    id: el.dataset.id,
+    aggregator: el.dataset.agg,
+    provider: el.dataset.prov,
+    name: el.querySelector('.model-lbl').innerText
+  }));
 }
 
-const textarea = document.querySelector('.auto-grow-textarea');
+/* ── UI ACTIONS ── */
+
+function toggleSection(name) {
+  const body = document.getElementById(`body-${name}`);
+  const isOpen = body.classList.toggle('open');
+  document.getElementById(`hdr-${name}`).classList.toggle('open', isOpen);
+}
+
+function toggleSidebar() {
+  const isHidden = document.getElementById('sidebar').classList.toggle('hidden-sb');
+  document.getElementById('sb-toggle').classList.toggle('collapsed', isHidden);
+}
+
+function toggleModel(id) {
+  document.querySelector(`.model-item[data-id="${id}"]`).classList.toggle('disabled');
+  const active = Array.from(document.querySelectorAll('.model-item:not(.disabled)'))
+    .map(el => el.querySelector('.model-lbl').innerText.split(' ')[0].toUpperCase());
+  document.getElementById('active-lbl').textContent = active.join(' · ') || 'NONE';
+}
+
+function autoResize() {
+  const ta = document.getElementById('prompt-ta');
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
+function handleKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleChat();
+  }
+}
 
 
-const autoResize = () => {
-  textarea.style.height = 'auto'; // Reset to natural height
-  textarea.style.height = Math.min(
-    textarea.scrollHeight, // Height needed for content
-    parseFloat(getComputedStyle(textarea).maxHeight) // Cap at max-height
-  ) + 'px';
-};
-textarea.addEventListener('input', autoResize);
-autoResize();
+/* ── RESIZING ── */
+const handle = document.getElementById('resize-handle');
+handle.addEventListener('mousedown', () => {
+  const onMove = (e) => {
+    let w = Math.min(Math.max(e.clientX, 180), 600);
+    document.getElementById('sidebar').style.width = `${w}px`;
+    document.documentElement.style.setProperty('--sb-width', `${w}px`);
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', () => document.removeEventListener('mousemove', onMove), { once: true });
+});
 
-// Function to add event listener to a details-group container
-function addDetailsEventListener(container) {
-  container.addEventListener('sl-show', event => {
-    if (event.target.localName === 'sl-details') {
-      [...container.querySelectorAll('sl-details')].map(details => (details.open = event.target === details));
+function clearModels() {
+  const modelList = document.getElementById('body-models');
+  if (!modelList) return;
+
+  const items = modelList.querySelectorAll(':scope > :not(.sb-search)');
+
+  items.forEach(item => item.remove());
+}
+
+var textbox = document.getElementById('prompt-ta');
+var modelbox = document.getElementById('body-models');
+
+/* ── NOTIFICATION & TOAST LOGIC ── */
+
+/**
+ * toggleNotifPanel
+ * Toggles the visibility of the notification sidebar.
+ */
+function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if (panel) {
+    panel.classList.toggle('open');
+  }
+}
+
+/**
+ * triggerToast
+ * Uses the pre-styled single #toast element from the DOM.
+ */
+function triggerToast(message, type = 'info') {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+
+  // Clear any existing timeout to avoid premature hiding if spamming alerts
+  if (toast.timeoutId) {
+    clearTimeout(toast.timeoutId);
+  }
+
+  // Define fallback colors to match the theme if CSS vars are missing
+  const colorMap = {
+    info: 'var(--secondary, #2196f3)',
+    success: 'var(--quinternary, #bac6ff)',
+    error: 'var(--tertiary, #f44336)',
+    warn: 'var(--quaternary, #ff9800)'
+  };
+
+  // Update content and text color dynamically based on type
+  toast.style.color = colorMap[type] || colorMap.info;
+  toast.innerHTML = `[${type.toUpperCase()}] ${message}`;
+
+  // Fire animation sequence via CSS classes
+  toast.classList.add('show');
+
+  // Register auto-hide sequence
+  toast.timeoutId = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+/**
+ * addNotification
+ * Injects item into sidebar panel and triggers the separate toast sequence.
+ */
+function addNotification(message, type = 'info') {
+  // 1. Sidebar Panel Logging
+  const list = document.getElementById('notif-list');
+  if (list) {
+    const item = document.createElement('div');
+    item.className = 'notif-item';
+
+    const colorMap = {
+      info: 'var(--secondary)',
+      success: 'var(--primary)',
+      error: 'var(--tertiary)',
+      warn: 'var(--quaternary)'
+    };
+    const borderColor = colorMap[type] || colorMap.info;
+    item.style.borderColor = borderColor;
+
+    item.innerHTML = `
+      <div class="notif-item-title" style="color:${borderColor}">${type.toUpperCase()}</div>
+      <div class="notif-item-msg">${message}</div>
+    `;
+    list.insertBefore(item, list.firstChild);
+
+    const badge = document.getElementById('notif-badge');
+    if (badge) {
+      let count = parseInt(badge.textContent) || 0;
+      badge.textContent = count + 1;
+      badge.style.display = 'flex';
     }
-  });
+  }
+
+  // 2. Delegate to toast function
+  triggerToast(message, type);
 }
 
-function infoToast(message) {
-  const toast = Object.assign(document.createElement('sl-alert'), {
-    variant: 'primary',
-    duration: 3000,
-    closable: true,
-    innerHTML: `
-            <sl-icon slot="icon" name="info-circle"></sl-icon>
-            <strong>Info</strong><br>
-            ${message}        `
-  });
+/**
+ * toast commands
+ * All redirected to addNotification but keeping original names.
+ */
+function showToast(msg) { addNotification(msg, 'info'); }
+function infoToast(msg) { addNotification(msg, 'info'); }
+function successToast(msg) { addNotification(msg, 'success'); }
+function errorToast(msg) { addNotification(msg, 'error'); }
+function warnToast(msg) { addNotification(msg, 'warn'); }
 
-  document.body.append(toast);
-  toast.toast();
-
-  // Clean up after it's hidden
-  toast.addEventListener('sl-after-hide', () => toast.remove());
+/**
+ * toggleTool
+ * Updated to use new notification redirect.
+ */
+function toggleTool(el) {
+  el.classList.toggle('on');
+  successToast('Tool configuration updated');
 }
 
-function successToast(message) {
-  const toast = Object.assign(document.createElement('sl-alert'), {
-    variant: 'success',
-    duration: 3000,
-    closable: true,
-    innerHTML: `
-            <sl-icon slot="icon" name="check-circle"></sl-icon>
-            <strong>Success</strong><br>
-            ${message}        `
-  });
-
-  document.body.append(toast);
-  toast.toast();
-
-  // Clean up after it's hidden
-  toast.addEventListener('sl-after-hide', () => toast.remove());
+/**
+ * deploySync
+ * Updated to use new notification redirect.
+ */
+function deploySync() {
+  const sb = document.getElementById('status-bar');
+  sb.classList.add('syncing');
+  infoToast('Deploying synchronized environment...');
+  setTimeout(() => sb.classList.remove('syncing'), 3000);
 }
 
-function warnToast(message) {
-  const toast = Object.assign(document.createElement('sl-alert'), {
-    variant: 'warning',
-    duration: 3000,
-    closable: true,
-    innerHTML: `
-            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-            <strong>Warning</strong><br>
-            ${message}        `
-  });
+/**
+ * updateTokenCount
+ * Updates the visual counter in the prompt bar.
+ * @param {string} val - The raw text from the textarea.
+ */
+function updateTokenCount(val) {
+  const counterEl = document.getElementById('token-counter');
+  if (!counterEl) return;
 
-  document.body.append(toast);
-  toast.toast();
+  // Approximate tokens: ~4 chars per token for English
+  // Adjust logic if using specific Byte Pair Encoding (BPE)
+  const tokenCount = Math.ceil(val.length / 4);
 
-  toast.addEventListener('sl-after-hide', () => toast.remove());
+  // Update the UI text
+  counterEl.textContent = tokenCount.toLocaleString();
+
+  // Visual feedback: turn red if approaching limit (8,192)
+  if (tokenCount > 7000) {
+    counterEl.style.color = 'var(--error, #ff4d4d)';
+  } else {
+    counterEl.style.color = 'inherit';
+  }
 }
 
-function errorToast(message) {
-  const toast = Object.assign(document.createElement('sl-alert'), {
-    variant: 'danger',
-    duration: 3000,
-    closable: true,
-    innerHTML: `
-            <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
-            <strong>Error</strong><br>
-            ${message}
-        `
-  });
+var loggud = false;
 
-  document.body.append(toast);
-  toast.toast();
+var userName = "User"; // Placeholder name for toast
+var userAvatar = null; // Test placeholder styling
 
-  toast.addEventListener('sl-after-hide', () => toast.remove());
+function renderFooter() {
+  const footer = document.getElementById('sb-footer');
+  if (loggud) {
+    const avatarHtml = userAvatar
+      ? `<img class="footer-avatar" src="${userAvatar}" alt="${userName}"/>`
+      : `<div class="footer-avatar-placeholder" style="width:20px;height:20px;border-radius:50%;background-color:var(--primary);display:inline-block;vertical-align:middle;"></div>`;
+    footer.innerHTML = `
+      <div class="footer-user">
+        <div class="footer-user-info">
+          ${avatarHtml}
+          <span class="footer-username">${userName}</span>
+        </div>
+        <div class="notif-wrap">
+          <span class="icon" style="font-size:20px;cursor:pointer;transition:color var(--tr)" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color=''" onclick="toggleNotifPanel()">notifications</span>
+          <span class="notif-badge" id="notif-badge">2</span>
+        </div>
+        <span class="icon" style="font-size:20px;cursor:pointer;transition:color var(--tr);margin-left:6px" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color=''" onclick="showToast('Settings — coming soon')">settings</span>
+        <span class="icon" style="font-size:20px;cursor:pointer;transition:color var(--tr);margin-left:6px" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color=''" onclick="handleLogout()">logout</span>
+      </div>`;
+  } else {
+    footer.innerHTML = `
+      <div class="footer-auth">
+        <span class="footer-auth-label">Sign in to save chats and sync across devices.</span>
+        <button class="btn-google" onclick="handleGoogleAuth()">
+          <svg width="14" height="14" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>`;
+  }
+}
+
+function handleGoogleAuth() {
+  signInWithGoogle()
+}
+
+function handleLogout() {
+  //CookieStoreManager.removeItem('longJWT');
+  localStorage.removeItem('shortJWT');
+  clearChatContent();
+  moveUserHome();
+  loggud = false;
+  renderFooter();
+  infoToast('Logout is WIP, reload the page');
 }

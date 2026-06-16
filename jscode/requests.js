@@ -1,9 +1,11 @@
+console.log("requests.js loaded")
+
 async function requestLLM(models, message) {
     try {
         const history = getHistory();
         const empty = (history.length === 0);
 
-        const response = await fetch("http://localhost:8080/chat", {
+        const response = await fetch("/api/chat", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -35,6 +37,7 @@ async function requestLLM(models, message) {
                 if (line.trim()) {
                     try {
                         const data = JSON.parse(line);
+                        if (data.model == "prompt") {fillQuestion(data.mess_uuid); continue;}
                         fillAnswers([data.model, stylizeJson(data.response || ""), data.mess_uuid]);
                     } catch (e) {
                         console.error('Failed to parse line:', line, e);
@@ -60,7 +63,7 @@ async function requestLLM(models, message) {
 }
 async function loadChatList() {
     try {
-        const response = await fetch('http://localhost:8080/chatlist', {
+        const response = await fetch('/api/chatlist', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -84,7 +87,7 @@ async function loadChatList() {
 function loadChat(id) {
     if (!id) return;
 
-    fetch(`http://localhost:8080/chat/${id}`, { credentials: 'include' })
+    fetch(`/api/chat/${id}`, { credentials: 'include' })
         .then(response => response.json())
         .then(data => {
             if (!data.valid || !Array.isArray(data.messages)) return;
@@ -93,7 +96,7 @@ function loadChat(id) {
 
             for (let i = 0; i < msgs.length; i++) {
                 if (msgs[i].sender_user == true) {
-                    createQuestion(msgs[i].message);
+                    createQuestion(msgs[i].message, msgs[i].mess_uuid);
 
                     let modelMessages = [];
                     let j = i + 1;
@@ -118,7 +121,7 @@ function loadChat(id) {
         .catch(error => console.error("Fetch error:", error));
 }
 async function newChat() {
-    const response = await fetch('http://localhost:8080/newchat', { method: 'POST', credentials: "include" });
+    const response = await fetch('/api/newchat', { method: 'POST', credentials: "include" });
     const data = await response.json();
 
     chatid = data.chatid;
@@ -150,7 +153,7 @@ function signInWithGoogle() {
                 popup.close();
                 clearInterval(timer);
                 if (!code) return errorToast("auth fail");
-                fetch('http://localhost:8080/auth', {
+                fetch('/api/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-authtype': 'google' },
                     credentials: 'include',
@@ -159,7 +162,7 @@ function signInWithGoogle() {
                     .then(d => {
                         const parsed = typeof d === 'string' ? JSON.parse(d) : d;
                         if (parsed.status === "Login success") {
-                            successToast("login success");
+                            successToast("login success as" + userName);
                             loginJWT();
                         }
                     });
@@ -169,7 +172,7 @@ function signInWithGoogle() {
 };
 async function loginJWT() {
     try {
-        const response = await fetch('http://localhost:8080/auth', {
+        const response = await fetch('/api/auth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -189,6 +192,7 @@ async function loginJWT() {
         console.log('Auth success:', data.status);
 
         logged(data)
+        
 
         return true;
     } catch (err) {
@@ -199,7 +203,7 @@ async function loginJWT() {
 
 async function refreshJWT() {
     try {
-        const response = await fetch('http://localhost:8080/auth', {
+        const response = await fetch('/api/auth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -230,12 +234,12 @@ function onSubmit(token) {
 } // Recaptcha
 
 const CLIENT_ID = '310803326430-1kp91brnc26sg0s2ioai89hr3fipjren.apps.googleusercontent.com';
-const REDIRECT_URI = 'http://localhost:3000';
+const REDIRECT_URI = 'https://allchat.voropai.com';
 
 function requestModels() {
-    deleteModels();
+    clearModels();
 
-    fetch("http://127.0.0.1:8080/models", {
+    fetch("/api/models", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -269,10 +273,16 @@ window.addEventListener('popstate', () => {
 
 window.addEventListener('load', () => {
     loadChat(getChatIdFromURL());
+    console.log("loaded: ", getChatIdFromURL())
 });
 
 function moveUserTo(chatid) {
     window.history.pushState({}, "", `/chat/${chatid}`);
+    return true;
+}
+
+function moveUserHome() {
+    window.history.pushState({}, "", "/");
     return true;
 }
  

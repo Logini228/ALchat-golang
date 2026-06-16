@@ -8,7 +8,7 @@ import (
 )
 
 var Debug bool = true
-var Domain string = "localhost"
+var Domain string = "allchat.voropai.com"
 
 func Init() {
 	gologs.Init()

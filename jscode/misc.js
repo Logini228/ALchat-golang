@@ -1,16 +1,4 @@
-
 console.log("misc.js loaded")
-
-// Add event listeners to any existing details-group containers on page load
-document.addEventListener('DOMContentLoaded', () => {
-  const existingContainers = document.querySelectorAll('.details-group');
-  existingContainers.forEach(addDetailsEventListener);
-});
-
-function test() {
-  console.log("test triggered")
-}
-
 
 function stylizeJson(text) {
     if (typeof text !== 'string') {
@@ -85,3 +73,4 @@ function stylizeJson(text) {
 
     return html;
 }
+

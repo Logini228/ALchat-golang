@@ -24,6 +24,8 @@ func buildMessageChain(reqPrompt string, reqHistory []gjson.Result, isEmpty bool
 			}
 		}
 
+		gologs.Info.Println("ids:", ids)
+
 		idsContents := messUUIDsToContent(ids)
 
 		for _, entry := range reqHistory {
