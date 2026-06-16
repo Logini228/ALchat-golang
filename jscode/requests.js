@@ -234,7 +234,9 @@ function onSubmit(token) {
 } // Recaptcha
 
 const CLIENT_ID = '310803326430-1kp91brnc26sg0s2ioai89hr3fipjren.apps.googleusercontent.com';
-const REDIRECT_URI = 'https://allchat.voropai.com';
+
+const current_origin = window.location.origin.replace("http://", "https://");
+const REDIRECT_URI = encodeURIComponent(`${current_origin}`);
 
 function requestModels() {
     clearModels();
