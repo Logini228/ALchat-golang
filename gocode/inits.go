@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var Debug bool = true
+var Debug bool = false
 var Domain string = "allchat.voropai.com"
 
 func Init() {

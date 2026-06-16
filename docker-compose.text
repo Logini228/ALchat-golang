@@ -1,3 +1,5 @@
+receiving docker compose
+
 services:
   db:
     image: postgres:16-alpine
@@ -17,9 +19,6 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: .
-      dockerfile: backend.Dockerfile
     image: logini228/aichat-backend:latest
     restart: unless-stopped
     env_file:
@@ -34,9 +33,6 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend.Dockerfile
     image: logini228/aichat-frontend:latest
     restart: unless-stopped
     ports:
@@ -47,6 +43,16 @@ services:
       - backend
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup --label-enable
+    networks:
+      - frontend_net
+      - backend_net
 
 networks:
   backend_net:
