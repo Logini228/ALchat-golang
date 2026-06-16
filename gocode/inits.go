@@ -23,7 +23,7 @@ func Init() {
 func LoadEnv() {
 	err := godotenv.Load()
 	if err != nil {
-		gologs.Error.Println("Error loading .env file")
+		gologs.Error.Println("Error loading .env file:", err)
 	}
 
 	jwt_secret_key = os.Getenv("JWT_SECRET_KEY")

@@ -1,7 +1,7 @@
 -- schema.sql
 -- psql -h 127.0.0.1 -U postgresuser -d postgresdb -f schema.sql
 
-CREATE IF NOT EXISTS SCHEMA chat_app;
+CREATE SCHEMA IF NOT EXISTS chat_app;
 
 SET search_path TO chat_app;
 
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS chat_members (
     owner BOOLEAN DEFAULT TRUE
 );
 
-CREATE INDEX idx_members_user_uuid ON chat_members(uuid);
+CREATE INDEX IF NOT EXISTS idx_members_user_uuid ON chat_members(uuid);
 
 CREATE TABLE IF NOT EXISTS message (
     id SERIAL PRIMARY KEY,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS message (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_message_chatid ON message(chatid);
+CREATE INDEX IF NOT EXISTS idx_message_chatid ON message(chatid);
 
 CREATE TABLE IF NOT EXISTS models (
     aggregator TEXT NOT NULL,
