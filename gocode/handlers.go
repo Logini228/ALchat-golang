@@ -1,9 +1,13 @@
 package gocode
 
 import (
+	"bufio"
 	"io"
 	"math/rand/v2"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
@@ -307,4 +311,66 @@ func GetChatList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"chatlist": chatlist})
+}
+
+func GetDebugLogs(c *gin.Context) {
+	// Match the path defined in your gologs.Init()
+	logPath := filepath.Join("logs", "app.log")
+
+	lines, err := GetLastNLines(logPath, 50)
+	if err != nil {
+		// If the file doesn't exist yet (e.g., app just started), return an empty array
+		if os.IsNotExist(err) {
+			c.JSON(http.StatusOK, gin.H{"logs": []string{}})
+			return
+		}
+
+		// Log the error using your gologs package
+		// gologs.Error.Printf("Failed to read log file: %v", err)
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read logs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"logs": lines,
+	})
+}
+
+// getLastNLines efficiently reads the last N lines of a file.
+// It uses a rolling buffer to ensure memory usage never exceeds N lines.
+func GetLastNLines(filename string, n int) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	// Pre-allocate slice with capacity n to avoid memory reallocations
+	lines := make([]string, 0, n)
+	scanner := bufio.NewScanner(file)
+
+	// Increase buffer size in case you have extremely long log lines (e.g., large JSON dumps or stack traces)
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, 1024*1024) // 1MB max line size
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Trim carriage return to handle Windows-style line endings (\r\n) safely
+		line = strings.TrimSuffix(line, "\r")
+
+		// Rolling buffer logic: keep only the last N lines
+		if len(lines) == n {
+			copy(lines, lines[1:]) // Shift existing elements left by 1
+			lines[n-1] = line      // Insert the new line at the very end
+		} else {
+			lines = append(lines, line)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return lines, nil
 }

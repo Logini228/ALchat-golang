@@ -21,6 +21,7 @@ func main() {
 	router.POST("/chat", gocode.AskLLM)
 	router.POST("/auth", gocode.Auth)
 	router.POST("/models", gocode.GetModelsFromDB)
+	router.POST("/debug", gocode.GetDebugLogs)
 
 	startServer(router)
 

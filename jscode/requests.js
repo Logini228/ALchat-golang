@@ -286,6 +286,25 @@ function moveUserHome() {
     return true;
 }
  
+async function getDebug() {
+    try {
+        const response = await fetch('/api/debug', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                "g-recaptcha-response": 0
+            },
+        });
+
+        const data = await response.json();
+        console.log("debug: ", data);
+
+
+    } catch (err) {
+        return [[]]
+    }
+}
+
 /* traditional login. Maybe I'll get back to it in the future
 
 function auth(authtype = "none", recaptcha = 0, _email, _password) {
