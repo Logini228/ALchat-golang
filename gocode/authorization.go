@@ -146,7 +146,7 @@ func VerifyLoginGoogle(code string) (*GoogleUser, bool) {
 	form.Set("client_secret", os.Getenv("GOOGLE_CLIENT_SECRET"))
 	form.Set("grant_type", "authorization_code")
 	form.Set("code", code)
-	form.Set("redirect_uri", "http://"+Domain)
+	form.Set("redirect_uri", "https://"+Domain)
 
 	resp, err := http.PostForm("https://oauth2.googleapis.com/token", form)
 	if err != nil || resp.StatusCode != 200 {

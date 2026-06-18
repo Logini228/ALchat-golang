@@ -213,7 +213,7 @@ func Auth(c *gin.Context) {
 
 		valid, uuid, email := ParseJWT(longToken, true)
 		if !valid || uuid == "" || email == "" {
-			gologs.Warning.Println("loginJWT: invalid or expired long token")
+			gologs.Warning.Println("loginJWT: invalid or expired long token: ", longToken)
 			c.JSON(http.StatusUnauthorized, gin.H{"status": "invalid or expired authentication token"})
 			return
 		}
