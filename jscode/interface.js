@@ -224,6 +224,72 @@ function escapeHtml(text) {
 
 /* ── MODEL SELECTION ── */
 
+const MODEL_META = {};
+let infoTip = null;
+let infoTipHideTimer = null;
+
+function esc(text) {
+  return escapeHtml(text || '');
+}
+
+function showInfoTip(e, key) {
+  clearTimeout(infoTipHideTimer);
+  
+  if (!infoTip) {
+    infoTip = document.getElementById('info-tooltip');
+    if (!infoTip) {
+      infoTip = document.createElement('div');
+      infoTip.id = 'info-tooltip';
+      infoTip.className = 'info-tooltip';
+      document.body.appendChild(infoTip);
+    }
+  }
+
+  const m = MODEL_META[key];
+  if (!m) return;
+  const cv = `var(--${m.color})`;
+
+  infoTip.innerHTML = `
+    <div class="info-tooltip-title" style="color:${cv}">${esc(m.name)}</div>
+    <div class="info-row"><span class="info-key">Aggregator</span><span class="info-val">${esc(m.aggregator)}</span></div>
+    <div class="info-row"><span class="info-key">Provider</span><span class="info-val">${esc(m.provider)}</span></div>
+    <div class="info-row"><span class="info-key">Model ID</span><span class="info-val info-mono">${esc(m.id)}</span></div>
+    <div class="info-row"><span class="info-key">Name</span><span class="info-val">${esc(m.name)}</span></div>
+    <div class="info-row"><span class="info-key">Price</span><span class="info-val">${esc(m.price)}</span></div>
+    <div class="info-row"><span class="info-key">Context</span><span class="info-val">${esc(m.context)}</span></div>
+    <div class="info-row"><span class="info-key">Inputs</span><span class="info-val">${esc(m.inputs)}</span></div>
+    <div class="info-row"><span class="info-key">Outputs</span><span class="info-val">${esc(m.outputs)}</span></div>\n`;
+  infoTip.style.borderColor = `${cv}66`;
+
+  // Position relative to the hovered icon, clamped to viewport
+  const rect = e.currentTarget.getBoundingClientRect();
+  infoTip.style.visibility = 'hidden';
+  infoTip.style.display = 'block';
+  const tipH = infoTip.offsetHeight;
+  const tipW = infoTip.offsetWidth;
+
+  let left = rect.right + 10;
+  let top = rect.top + rect.height / 2 - tipH / 2;
+
+  // Flip below/right edge clamp
+  if (left + tipW > window.innerWidth - 8) left = rect.left - tipW - 10;
+  if (top < 8) top = 8;
+  if (top + tipH > window.innerHeight - 8) top = window.innerHeight - tipH - 8;
+
+  infoTip.style.left = left + 'px';
+  infoTip.style.top = top + 'px';
+  infoTip.style.visibility = '';
+  infoTip.classList.add('show');
+}
+
+function hideInfoTip() {
+  infoTipHideTimer = setTimeout(() => {
+    if (infoTip) {
+      infoTip.classList.remove('show');
+    }
+  }, 60);
+}
+
 /**
  * createCheckboxFromModel
  * adds 'disabled' class by default.
@@ -240,9 +306,27 @@ function createCheckboxFromModel(aggregator, provider, id, name, price, context,
   item.dataset.prov = provider;
   item.onclick = () => toggleModel(id);
 
+  // Determine color based on provider/id
+  const colorMap = { gpt4: 'primary', claude: 'secondary', gemini: 'tertiary' };
+  const cv = `var(--${colorMap[id] || 'primary'})`;
+
+  // Save to metadata map
+  MODEL_META[id] = {
+    aggregator: aggregator || '',
+    provider: provider || '',
+    id: id || '',
+    name: name || '',
+    price: price || '',
+    context: context || '',
+    inputs: inputs || '',
+    outputs: outputs || '',
+    color: cv
+  };
+
   item.innerHTML = `
-    <span class="model-dot"></span>
-    <span class="model-lbl">${escapeHtml(name)}</span>
+    <span class="model-dot" id="${id}" style="background:${cv}"></span>
+    <span class="model-lbl" id="${id}">${escapeHtml(name)}</span>
+    <span class="icon info-icon" style="color:${cv}" onmouseenter="showInfoTip(event,'${id}')" onmouseleave="hideInfoTip()" onclick="event.stopPropagation()">info</span>
   `;
   list.appendChild(item);
 }
