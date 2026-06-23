@@ -165,7 +165,7 @@ func GoogleToDB(user *GoogleUser) (string, string) {
     ) VALUES (
         $1, $2, $3, $4
     )
-    ON CONFLICT (googleid) DO NOTHING
+    ON CONFLICT (googleid) DO UPDATE
     RETURNING uuid
 `,
 		user.Email,
@@ -174,7 +174,7 @@ func GoogleToDB(user *GoogleUser) (string, string) {
 		user.Avatar,
 	).Scan(&uuid)
 	if err != nil {
-		gologs.Error.Printf("couldn't insert google user entry, %v", err)
+		gologs.Error.Println("couldn't insert google user entry, ", err)
 	}
 
 	return uuid, user.Email

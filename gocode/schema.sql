@@ -1,6 +1,7 @@
 -- schema.sql
 -- psql -h 127.0.0.1 -U postgresuser -d postgresdb -f schema.sql
 
+-- DROP SCHEMA IF EXISTS chat_app CASCADE;
 CREATE SCHEMA IF NOT EXISTS chat_app;
 
 SET search_path TO chat_app;
