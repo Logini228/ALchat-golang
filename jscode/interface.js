@@ -251,6 +251,9 @@ function showInfoTip(e, key) {
   if (!m) return;
   const cv = `var(--${m.color})`;
 
+  const ctxVal = parseContextValue(m.context);
+  const formattedCtx = !isNaN(ctxVal) ? ctxVal.toLocaleString() : (m.context || '—');
+
   infoTip.innerHTML = `
     <div class="info-tooltip-title" style="color:${cv}">${esc(m.name)}</div>
     <div class="info-row"><span class="info-key">Aggregator</span><span class="info-val">${esc(m.aggregator)}</span></div>
@@ -258,7 +261,7 @@ function showInfoTip(e, key) {
     <div class="info-row"><span class="info-key">Model ID</span><span class="info-val info-mono">${esc(m.id)}</span></div>
     <div class="info-row"><span class="info-key">Name</span><span class="info-val">${esc(m.name)}</span></div>
     <div class="info-row"><span class="info-key">Price</span><span class="info-val">${esc(m.price)}</span></div>
-    <div class="info-row"><span class="info-key">Context</span><span class="info-val">${esc(m.context)}</span></div>
+    <div class="info-row"><span class="info-key">Context</span><span class="info-val">${esc(formattedCtx)}</span></div>
     <div class="info-row"><span class="info-key">Inputs</span><span class="info-val">${esc(m.inputs)}</span></div>
     <div class="info-row"><span class="info-key">Outputs</span><span class="info-val">${esc(m.outputs)}</span></div>\n`;
   infoTip.style.borderColor = `${cv}66`;
@@ -365,6 +368,7 @@ function toggleModel(id) {
   const active = Array.from(document.querySelectorAll('.model-item:not(.disabled)'))
     .map(el => el.querySelector('.model-lbl').innerText.split(' ')[0].toUpperCase());
   document.getElementById('active-lbl').textContent = active.join(' · ') || 'NONE';
+  updateTokenLimit();
 }
 
 function autoResize() {
@@ -530,14 +534,15 @@ function updateTokenCount(val) {
   if (!counterEl) return;
 
   // Approximate tokens: ~4 chars per token for English
-  // Adjust logic if using specific Byte Pair Encoding (BPE)
   const tokenCount = Math.ceil(val.length / 4);
 
   // Update the UI text
   counterEl.textContent = tokenCount.toLocaleString();
 
-  // Visual feedback: turn red if approaching limit (8,192)
-  if (tokenCount > 7000) {
+  // Visual feedback: turn red if exceeding active limit or if limit is 0 and input has text
+  if (activeTokenLimit > 0 && tokenCount > activeTokenLimit) {
+    counterEl.style.color = 'var(--error, #ff4d4d)';
+  } else if (activeTokenLimit === 0 && tokenCount > 0) {
     counterEl.style.color = 'var(--error, #ff4d4d)';
   } else {
     counterEl.style.color = 'inherit';
@@ -598,3 +603,146 @@ function handleLogout() {
   renderFooter();
   infoToast('Logout is WIP, reload the page');
 }
+
+/* ── TOKENS & MODEL CONTEXT TOOLTIP ── */
+
+let activeTokenLimit = 0;
+
+function parseContextValue(val) {
+  if (val === undefined || val === null) return NaN;
+  let str = val.toString().trim().toLowerCase().replace(/,/g, '');
+  let multiplier = 1;
+  if (str.endsWith('k')) {
+    multiplier = 1000;
+    str = str.slice(0, -1);
+  } else if (str.endsWith('m')) {
+    multiplier = 1000000;
+    str = str.slice(0, -1);
+  } else if (str.endsWith('g')) {
+    multiplier = 1000000000;
+    str = str.slice(0, -1);
+  }
+  const parsed = parseFloat(str);
+  return isNaN(parsed) ? NaN : Math.round(parsed * multiplier);
+}
+
+function updateTokenCap(cap) {
+  const counterEl = document.getElementById('token-counter');
+  if (!counterEl) return;
+  let node = counterEl.nextSibling;
+  while (node) {
+    if (node.nodeType === Node.TEXT_NODE && node.nodeValue.includes('/')) {
+      const formattedCap = typeof cap === 'number' ? cap.toLocaleString() : cap;
+      node.nodeValue = '/' + formattedCap;
+      break;
+    }
+    node = node.nextSibling;
+  }
+}
+
+function updateTokenLimit() {
+  const selectedModels = getSelectedModels();
+  if (selectedModels.length === 0) {
+    activeTokenLimit = 0;
+    updateTokenCap(0);
+    // Refresh color indicator
+    const ta = document.getElementById('prompt-ta');
+    if (ta) updateTokenCount(ta.value);
+    return;
+  }
+  
+  let minContext = Infinity;
+  selectedModels.forEach(m => {
+    const meta = MODEL_META[m.id];
+    if (meta && meta.context) {
+      const ctxVal = parseContextValue(meta.context);
+      if (!isNaN(ctxVal) && ctxVal < minContext) {
+        minContext = ctxVal;
+      }
+    }
+  });
+  
+  if (minContext === Infinity) {
+    activeTokenLimit = 0;
+    updateTokenCap(0);
+  } else {
+    activeTokenLimit = minContext;
+    updateTokenCap(minContext);
+  }
+  
+  // Refresh color indicator
+  const ta = document.getElementById('prompt-ta');
+  if (ta) {
+    updateTokenCount(ta.value);
+  }
+}
+
+let tokensTooltip = null;
+function showTokensTooltip(e) {
+  const selected = getSelectedModels();
+  if (selected.length === 0) {
+    hideTokensTooltip();
+    return;
+  }
+
+  if (!tokensTooltip) {
+    tokensTooltip = document.createElement('div');
+    tokensTooltip.className = 'info-tooltip';
+    document.body.appendChild(tokensTooltip);
+  }
+  
+  let html = '<div class="info-tooltip-title" style="color:var(--secondary);border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:4px;margin-bottom:8px;">Active Models Context</div>';
+  selected.forEach(m => {
+    const meta = MODEL_META[m.id];
+    const ctxVal = meta ? parseContextValue(meta.context) : NaN;
+    const ctx = !isNaN(ctxVal) ? ctxVal.toLocaleString() : (meta ? meta.context : '—');
+    const color = meta ? meta.color : 'var(--text)';
+    html += `
+      <div class="info-row" style="display:flex;justify-content:space-between;gap:16px;margin-bottom:4px;">
+        <span style="color:${color};font-weight:500;">${escapeHtml(m.name)}</span>
+        <span class="info-mono" style="color:var(--text-muted);">${ctx}</span>
+      </div>
+    `;
+  });
+  tokensTooltip.innerHTML = html;
+  
+  const rect = e.currentTarget.getBoundingClientRect();
+  tokensTooltip.style.display = 'block';
+  tokensTooltip.style.visibility = 'hidden';
+  
+  const tipH = tokensTooltip.offsetHeight;
+  const tipW = tokensTooltip.offsetWidth;
+  
+  let left = rect.left + rect.width / 2 - tipW / 2;
+  let top = rect.top - tipH - 8;
+  
+  if (left < 8) left = 8;
+  if (left + tipW > window.innerWidth - 8) {
+    left = window.innerWidth - tipW - 8;
+  }
+  if (top < 8) {
+    top = rect.bottom + 8;
+  }
+  
+  tokensTooltip.style.left = left + 'px';
+  tokensTooltip.style.top = top + 'px';
+  tokensTooltip.style.visibility = '';
+  tokensTooltip.classList.add('show');
+}
+
+function hideTokensTooltip() {
+  if (tokensTooltip) {
+    tokensTooltip.classList.remove('show');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tokensLabel = Array.from(document.querySelectorAll('.prompt-meta .kw, .prompt-meta span'))
+    .find(el => el.textContent.includes('TOKENS'));
+  if (tokensLabel) {
+    tokensLabel.style.cursor = 'pointer';
+    tokensLabel.addEventListener('mouseenter', showTokensTooltip);
+    tokensLabel.addEventListener('mouseleave', hideTokensTooltip);
+  }
+  updateTokenLimit();
+});
