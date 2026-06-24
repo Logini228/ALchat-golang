@@ -199,8 +199,10 @@ function renderChatList(data) {
   const list = document.getElementById('chat-list');
   list.innerHTML = '';
   
-for (const [id, name] of data) {
-    if (name === "") { continue; } // Works perfect here
+  if (!Array.isArray(data)) return;
+  
+  for (const [id, name] of data) {
+    if (!id || id === "undefined" || !name || name === "undefined" || name === "") { continue; }
     
     const item = document.createElement('div');
     const isActive = (id == currentChatId);
