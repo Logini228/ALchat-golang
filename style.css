@@ -490,3 +490,156 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 /* ── TOAST ──────────────────────────────────────────────────── */
 #toast { position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%) translateY(6px); background: var(--bg-high); border: 1px solid rgba(186,158,255,.4); color: var(--primary); font-family: var(--font-mono); font-size: 11px; padding: 7px 16px; z-index: 400; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; box-shadow: 0 4px 20px rgba(0,0,0,.5); }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── INTRO SCREEN ───────────────────────────────────────────── */
+.chat-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 32px;
+  padding: 40px 20px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  text-align: center;
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.intro-buttons {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.intro-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 0; /* Sharp corners */
+  border: 1px solid var(--border);
+  background: var(--bg-low);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.intro-btn:hover {
+  color: var(--text);
+  border-color: var(--primary);
+  background: var(--bg-mid);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(186, 158, 255, 0.15);
+}
+
+.intro-btn .btn-icon {
+  transition: transform 0.22s ease;
+}
+
+.intro-btn:hover .btn-icon {
+  transform: scale(1.1);
+}
+
+.intro-title {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.intro-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  width: 100%;
+  max-width: 520px;
+  margin-top: 12px;
+}
+
+.flow-step {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  text-align: left;
+  opacity: 0.85;
+  transition: opacity 0.25s ease;
+}
+
+.flow-step:hover {
+  opacity: 1;
+}
+
+.step-select-models {
+  align-self: flex-start;
+}
+
+.step-hit-ask {
+  align-self: flex-end;
+  text-align: right;
+}
+
+.flow-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flow-title {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.flow-subtitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+/* Unconfined floating arrows */
+.flow-arrow-left, .flow-arrow-down {
+  font-size: 28px;
+  color: var(--secondary);
+  text-shadow: 0 0 10px rgba(105, 156, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.flow-arrow-left {
+  color: var(--primary);
+  text-shadow: 0 0 10px rgba(186, 158, 255, 0.3);
+}
+
+.arrow-animation-left {
+  animation: floatLeft 1.5s infinite ease-in-out;
+}
+
+.arrow-animation-down {
+  animation: floatDownRight 1.5s infinite ease-in-out;
+}
+
+@keyframes floatLeft {
+  0%, 100% { transform: translateX(0) scale(1); }
+  50% { transform: translateX(-8px) scale(1.1); }
+}
+
+@keyframes floatDownRight {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(6px, 6px) scale(1.1); }
+}
