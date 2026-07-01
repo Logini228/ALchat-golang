@@ -166,6 +166,9 @@ func GoogleToDB(user *GoogleUser) (string, string) {
         $1, $2, $3, $4
     )
     ON CONFLICT (googleid) DO UPDATE
+    SET email = EXCLUDED.email,
+        name = EXCLUDED.name,
+        avatar = EXCLUDED.avatar
     RETURNING uuid
 `,
 		user.Email,
