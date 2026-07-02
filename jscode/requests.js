@@ -37,7 +37,7 @@ async function requestLLM(models, message) {
                 if (line.trim()) {
                     try {
                         const data = JSON.parse(line);
-                        if (data.model == "prompt") {fillQuestion(data.mess_uuid); continue;}
+                        if (data.model == "prompt") { fillQuestion(data.mess_uuid); continue; }
                         fillAnswers([data.model, stylizeJson(data.response || ""), data.mess_uuid]);
                     } catch (e) {
                         console.error('Failed to parse line:', line, e);
@@ -121,7 +121,16 @@ function loadChat(id) {
         .catch(error => console.error("Fetch error:", error));
 }
 async function newChat() {
-    const response = await fetch('/api/newchat', { method: 'POST', credentials: "include" });
+    const response = await fetch('/api/newchat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-authtype': 'loginJWT',
+            "g-recaptcha-response": 0
+        },
+        credentials: "include",
+        body: JSON.stringify({})
+    });
     const data = await response.json();
 
     chatid = data.chatid;
@@ -192,7 +201,7 @@ async function loginJWT() {
         console.log('Auth success:', data.status);
 
         logged(data)
-        
+
 
         return true;
     } catch (err) {
@@ -247,25 +256,25 @@ function requestModels() {
         },
         body: JSON.stringify({ "input": modelbox.value })
     })
-    .then(response => response.json())
-    .then(data => {
-        // data is an array of model objects
-        data.forEach(model => {
-            createCheckboxFromModel(
-                model.Aggregator,
-                model.Provider,
-                model.ID,
-                model.Name,
-                model.Price,
-                model.Context,
-                model.Inputs,
-                model.Outputs
-            );
+        .then(response => response.json())
+        .then(data => {
+            // data is an array of model objects
+            data.forEach(model => {
+                createCheckboxFromModel(
+                    model.Aggregator,
+                    model.Provider,
+                    model.ID,
+                    model.Name,
+                    model.Price,
+                    model.Context,
+                    model.Inputs,
+                    model.Outputs
+                );
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching models:', error);
         });
-    })
-    .catch(error => {
-        console.error('Error fetching models:', error);
-    });
 }
 window.addEventListener('popstate', () => {
     loadChat(getChatIdFromURL());
@@ -285,7 +294,7 @@ function moveUserHome() {
     window.history.pushState({}, "", "/");
     return true;
 }
- 
+
 async function getDebug() {
     try {
         const response = await fetch('/api/debug', {
