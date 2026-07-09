@@ -121,3 +121,107 @@ window.testModels = function () {
     console.log(`%c✓ testModels: 3 mock models loaded successfully. All checks passed.`, "color: #a2ff99; font-weight: 500;");
   }
 };
+
+window.testChat = function () {
+  let errors = [];
+
+  function assert(condition, message) {
+    if (!condition) {
+      errors.push(message);
+    }
+  }
+
+  function assertIncludes(actual, expected, message) {
+    if (!actual.includes(expected)) {
+      errors.push(`${message} (Expected "${expected}" in "${actual}")`);
+    }
+  }
+
+  const mc = document.getElementById('msg-container');
+  if (!mc) {
+    errors.push("Element '#msg-container' not found in the DOM.");
+    console.error("testChat failed: Element '#msg-container' not found in the DOM.");
+    return;
+  }
+
+  // 1. Create first question
+  createQuestion("Test Question 1");
+
+  // 2. Create first set of answers (3 models)
+  const models = ["gpt4", "claude", "gemini"];
+  createAnswers(models);
+
+  // Get the group we just created
+  const groups1 = mc.querySelectorAll('.answer-container');
+  const group1 = groups1[groups1.length - 1];
+
+  // Fill first answers
+  const ans1 = "**Lorem ipsum** gpt4 bold";
+  const ans2 = "*Lorem ipsum* claude italic";
+  const ans3 = "`Lorem ipsum` gemini code";
+
+  fillAnswers(["gpt4", stylizeJson(ans1), "dbid-1"]);
+  fillAnswers(["claude", stylizeJson(ans2), "dbid-2"]);
+  fillAnswers(["gemini", stylizeJson(ans3), "dbid-3"]);
+
+  // Assertions for first set of answers
+  if (group1) {
+    const panels = group1.querySelectorAll('.model-panel');
+    assert(panels.length === 3, "Expected 3 panels in group 1");
+    if (panels.length === 3) {
+      const text0 = panels[0].querySelector('.panel-text').innerHTML;
+      const text1 = panels[1].querySelector('.panel-text').innerHTML;
+      const text2 = panels[2].querySelector('.panel-text').innerHTML;
+
+      assertIncludes(text0, "<strong>Lorem ipsum</strong>", "gpt4 bold formatting failed");
+      assertIncludes(text1, "<em>Lorem ipsum</em>", "claude italic formatting failed");
+      assertIncludes(text2, "<code>Lorem ipsum</code>", "gemini code formatting failed");
+    }
+  } else {
+    assert(false, "Group 1 answer-container not found");
+  }
+
+  // 3. Create second question
+  createQuestion("Test Question 2");
+
+  // 4. Create second set of answers (3 models)
+  createAnswers(models);
+
+  // Get the group we just created
+  const groups2 = mc.querySelectorAll('.answer-container');
+  const group2 = groups2[groups2.length - 1];
+
+  // Fill second answers
+  const ans4 = "```text\nLorem ipsum gpt4 codeblock\n```";
+  const ans5 = "> Lorem ipsum claude blockquote";
+  const ans6 = "- Lorem ipsum gemini list";
+
+  fillAnswers(["gpt4", stylizeJson(ans4), "dbid-4"]);
+  fillAnswers(["claude", stylizeJson(ans5), "dbid-5"]);
+  fillAnswers(["gemini", stylizeJson(ans6), "dbid-6"]);
+
+  // Assertions for second set of answers
+  if (group2) {
+    const panels = group2.querySelectorAll('.model-panel');
+    assert(panels.length === 3, "Expected 3 panels in group 2");
+    if (panels.length === 3) {
+      const text3 = panels[0].querySelector('.panel-text').innerHTML;
+      const text4 = panels[1].querySelector('.panel-text').innerHTML;
+      const text5 = panels[2].querySelector('.panel-text').innerHTML;
+
+      assertIncludes(text3, '<pre><code class="language-text">Lorem ipsum gpt4 codeblock</code></pre>', "gpt4 codeblock formatting failed");
+      assertIncludes(text4, "<blockquote>Lorem ipsum claude blockquote</blockquote>", "claude blockquote formatting failed");
+      assertIncludes(text5, "<ul><li>Lorem ipsum gemini list</li></ul>", "gemini list formatting failed");
+    }
+  } else {
+    assert(false, "Group 2 answer-container not found");
+  }
+
+  // Report results
+  if (errors.length > 0) {
+    console.error("testChat failed: " + errors.join("; "));
+  } else {
+    console.log("all good");
+  }
+};
+
