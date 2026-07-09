@@ -147,6 +147,17 @@ function fillAnswers([modelName, content, id]) {
       const nameSpan = panel.querySelector('.panel-name');
       if (nameSpan) nameSpan.innerText = modelName.toUpperCase();
     }
+
+    // Auto-open panel when answer is received
+    panel.classList.remove('collapsed');
+    const body = panel.querySelector('.panel-body');
+    if (body) {
+      body.classList.add('open');
+    }
+    const arrow = panel.querySelector('.panel-arrow');
+    if (arrow) {
+      arrow.innerText = 'keyboard_arrow_down';
+    }
   }
 
   // Advance execution pointer state to prepare for next chunk sequence item
