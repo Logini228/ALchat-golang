@@ -368,6 +368,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .model-panel.collapsed { opacity: .65; }
 .model-panel.collapsed:hover { opacity: 1; }
 .model-panel:hover { border-color: var(--outline); }
+.model-panel.panel-error { background: repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(255,255,255,0.06) 30px, rgba(255,255,255,0.06) 54px); }
+
 
 .panel-hdr { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; cursor: pointer; transition: background var(--tr); }
 .model-panel:not(.collapsed) .panel-hdr { background: var(--bg-high); }

@@ -38,7 +38,7 @@ async function requestLLM(models, message) {
                     try {
                         const data = JSON.parse(line);
                         if (data.model == "prompt") { fillQuestion(data.mess_uuid); continue; }
-                        fillAnswers([data.model, stylizeJson(data.response || ""), data.mess_uuid]);
+                        fillAnswers([data.model, stylizeJson(data.response || ""), data.mess_uuid, data.code]);
                     } catch (e) {
                         console.error('Failed to parse line:', line, e);
                     }
@@ -80,7 +80,7 @@ async function loadChatList() {
 
         return nestedChats;
     } catch (err) {
-        warnToast('Error getting chatlist:', err);
+        console.log('Error getting chatlist:', err);
         return [[]]
     }
 }

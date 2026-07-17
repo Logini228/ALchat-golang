@@ -12,7 +12,8 @@ let hiddenModelIds = [
   "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
   "meta-llama/llama-3.3-70b-instruct:free",
   "meta-llama/llama-3.2-3b-instruct:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free"
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "openrouter/free"
 ];
 
 
@@ -125,6 +126,7 @@ function createAnswers(ids) {
           <div class="panel-text">Processing...</div>
         </div>
       </div>`;
+    panel.style.pointerEvents = 'none';
     wrap.appendChild(panel);
   });
 
@@ -137,7 +139,7 @@ function createAnswers(ids) {
  * fillAnswers
  * Matches targets sequentially based on structural execution index pointers
  */
-function fillAnswers([modelName, content, id]) {
+function fillAnswers([modelName, content, id, code]) {
   // Always access the oldest unresolved active interface container first
   const group = document.querySelector('.pending-group');
   if (!group) return;
@@ -152,7 +154,7 @@ function fillAnswers([modelName, content, id]) {
   const textDiv = panel.querySelector('.panel-text');
   const badge = panel.querySelector('.status-badge');
 
-  if (textDiv && badge) {
+  if (textDiv && badge && code == 0) {
     textDiv.innerHTML = content;
     badge.innerText = 'COMPLETE';
     panel.dataset.dbid = id;
@@ -162,6 +164,9 @@ function fillAnswers([modelName, content, id]) {
       const nameSpan = panel.querySelector('.panel-name');
       if (nameSpan) nameSpan.innerText = modelName.toUpperCase();
     }
+
+    // Restore interactivity on success
+    panel.style.pointerEvents = '';
 
     // Auto-open panel when answer is received
     panel.classList.remove('collapsed');
@@ -173,7 +178,29 @@ function fillAnswers([modelName, content, id]) {
     if (arrow) {
       arrow.innerText = 'keyboard_arrow_down';
     }
+
+  } else if (textDiv && badge && code != 0) {
+    badge.innerText = 'ERROR';
+    badge.style.cssText = 'background:var(--tertiary)22;color:var(--tertiary);border-color:var(--tertiary)44';
+    panel.dataset.dbid = id;
+    panel.style.pointerEvents = 'none';
+    panel.classList.add('panel-error');
+
+    // Turn mini-switch off
+    const sw = panel.querySelector('.mini-switch');
+    if (sw) {
+      sw.classList.remove('on');
+      sw.onclick = null;
+    }
+
+    // If the dynamic API response contains a specific model version name, preserve it
+    if (modelName) {
+      const nameSpan = panel.querySelector('.panel-name');
+      if (nameSpan) nameSpan.innerText = modelName.toUpperCase();
+    }
   }
+
+
 
   // Advance execution pointer state to prepare for next chunk sequence item
   const nextIndex = currentIndex + 1;
@@ -277,15 +304,15 @@ function getSelectedAnswerIds() {
 }
 
 function renderChatList(data) {
-  const currentChatId = getChatIdFromURL(); 
+  const currentChatId = getChatIdFromURL();
   const list = document.getElementById('chat-list');
   list.innerHTML = '';
-  
+
   if (!Array.isArray(data)) return;
-  
+
   for (const [id, name] of data) {
     if (!id || id === "undefined" || !name || name === "undefined" || name === "") { continue; }
-    
+
     const item = document.createElement('div');
     const isActive = (id == currentChatId);
     item.className = `chat-item ${isActive ? 'active' : ''}`;
@@ -318,7 +345,7 @@ function esc(text) {
 
 function showInfoTip(e, key) {
   clearTimeout(infoTipHideTimer);
-  
+
   if (!infoTip) {
     infoTip = document.getElementById('info-tooltip');
     if (!infoTip) {
@@ -735,7 +762,7 @@ function updateTokenLimit() {
     if (ta) updateTokenCount(ta.value);
     return;
   }
-  
+
   let minContext = Infinity;
   selectedModels.forEach(m => {
     const meta = MODEL_META[m.id];
@@ -746,7 +773,7 @@ function updateTokenLimit() {
       }
     }
   });
-  
+
   if (minContext === Infinity) {
     activeTokenLimit = 0;
     updateTokenCap(0);
@@ -754,7 +781,7 @@ function updateTokenLimit() {
     activeTokenLimit = minContext;
     updateTokenCap(minContext);
   }
-  
+
   // Refresh color indicator
   const ta = document.getElementById('prompt-ta');
   if (ta) {
@@ -775,7 +802,7 @@ function showTokensTooltip(e) {
     tokensTooltip.className = 'info-tooltip';
     document.body.appendChild(tokensTooltip);
   }
-  
+
   let html = '<div class="info-tooltip-title" style="color:var(--secondary);border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:4px;margin-bottom:8px;">Active Models Context</div>';
   selected.forEach(m => {
     const meta = MODEL_META[m.id];
@@ -790,17 +817,17 @@ function showTokensTooltip(e) {
     `;
   });
   tokensTooltip.innerHTML = html;
-  
+
   const rect = e.currentTarget.getBoundingClientRect();
   tokensTooltip.style.display = 'block';
   tokensTooltip.style.visibility = 'hidden';
-  
+
   const tipH = tokensTooltip.offsetHeight;
   const tipW = tokensTooltip.offsetWidth;
-  
+
   let left = rect.left + rect.width / 2 - tipW / 2;
   let top = rect.top - tipH - 8;
-  
+
   if (left < 8) left = 8;
   if (left + tipW > window.innerWidth - 8) {
     left = window.innerWidth - tipW - 8;
@@ -808,7 +835,7 @@ function showTokensTooltip(e) {
   if (top < 8) {
     top = rect.bottom + 8;
   }
-  
+
   tokensTooltip.style.left = left + 'px';
   tokensTooltip.style.top = top + 'px';
   tokensTooltip.style.visibility = '';
