@@ -95,6 +95,7 @@ func AskLLM(c *gin.Context) {
 		reqPrompt,
 		gjson.Get(body, "history").Array(),
 		gjson.Get(body, "empty").Bool(),
+		gjson.Get(body, "type").Bool(),
 	)
 
 	mess_uuid := "undefined"

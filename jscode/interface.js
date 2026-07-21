@@ -462,6 +462,24 @@ function getSelectedModels() {
   }));
 }
 
+/**
+ * getMode
+ * Returns the current chat mode as a numeric value:
+ *   1 = ASSISTANT
+ *   2 = COMPLETION
+ *   3 = DEBATE
+ *   0 = unknown
+ */
+function getMode() {
+  const val = document.getElementById('mode-select')?.value;
+  switch (val) {
+    case 'assistant':  return 1;
+    case 'completion': return 2;
+    case 'debate':     return 3;
+    default:           return 0;
+  }
+}
+
 /* ── UI ACTIONS ── */
 
 function toggleSection(name) {

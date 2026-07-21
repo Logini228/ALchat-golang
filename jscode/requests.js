@@ -1,9 +1,9 @@
 console.log("requests.js loaded")
 
-async function requestLLM(models, message) {
+async function requestLLM(models, message, type = true) {
     try {
         const history = getHistory();
-        const empty = (history.length === 0);
+        const empty = (history.length === 0);  
 
         const response = await fetch("/api/chat", {
             method: "POST",
@@ -16,7 +16,8 @@ async function requestLLM(models, message) {
                 "model": models,
                 "prompt": message,
                 "history": history,
-                "empty": empty
+                "empty": empty,
+                "type": type // true to ask as "user", false to ask as "assistant" which enables autocomplete
             }),
             credentials: "include"
         });

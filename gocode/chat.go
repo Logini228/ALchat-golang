@@ -12,9 +12,14 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func buildMessageChain(reqPrompt string, reqHistory []gjson.Result, isEmpty bool) []interface{} {
+func buildMessageChain(reqPrompt string, reqHistory []gjson.Result, isEmpty bool, reqType bool) []interface{} {
 	var messages []interface{}
 	messages = append(messages, gin.H{"role": "system", "content": "answer to user precisely"})
+
+	var userRole string = "user"
+	if !reqType {
+		userRole = "assistant"
+	}
 
 	if !isEmpty {
 		var ids []string
@@ -45,7 +50,7 @@ func buildMessageChain(reqPrompt string, reqHistory []gjson.Result, isEmpty bool
 			}
 		}
 	}
-	messages = append(messages, gin.H{"role": "user", "content": reqPrompt})
+	messages = append(messages, gin.H{"role": userRole, "content": reqPrompt})
 	return messages
 }
 
